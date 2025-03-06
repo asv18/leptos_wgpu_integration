@@ -10,6 +10,7 @@ mod pages;
 use crate::pages::home::Home;
 
 /// An app router which renders the homepage and handles 404's
+#[allow(non_snake_case)]
 #[component]
 pub fn App() -> impl IntoView {
     // Provides context that manages stylesheets, titles, meta tags, etc.
@@ -19,7 +20,7 @@ pub fn App() -> impl IntoView {
         <Html attr:lang="en" attr:dir="ltr" attr:data-theme="light" />
 
         // sets the document title
-        <Title text="Welcome to Leptos CSR" />
+        <Title text="Leptos CSR WGPU Example" />
 
         // injects metadata in the <head> of the page
         <Meta charset="UTF-8" />
