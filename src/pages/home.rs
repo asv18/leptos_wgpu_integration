@@ -1,5 +1,7 @@
 use leptos::prelude::*;
 
+use crate::components::window::Window;
+
 /// Default Home Page
 #[allow(non_snake_case)]
 #[component]
@@ -24,7 +26,9 @@ pub fn Home() -> impl IntoView {
             }
         }>
 
-            <div class="container"></div>
+            <div class="container">
+                <Window />
+            </div>
         </ErrorBoundary>
     }
 }
