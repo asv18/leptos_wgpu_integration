@@ -33,6 +33,7 @@ impl Vertex for PolygonVertex {
         }
     }
 
+    // lags like crazy on my computer - look into caching?
     fn gen_polygon(
         num_sides: u16,
         radius: f32,
