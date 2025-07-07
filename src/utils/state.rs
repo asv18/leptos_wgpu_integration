@@ -2,8 +2,9 @@ use std::sync::Arc;
 use std::str::FromStr;
 use leptos::web_sys;
 
+use crate::utils::types::buffers::polygon_vertex::PolygonVertex;
 use crate::utils::types::keycode::KeyCode;
-use crate::utils::types::size::PhysicalSize;
+use crate::utils::types::{size::PhysicalSize, buffers::polygon_buffer::PolygonBuffer};
 
 pub struct State {
     surface: wgpu::Surface<'static>,
@@ -13,8 +14,8 @@ pub struct State {
     is_surface_configured: bool,
     canvas: Arc<web_sys::HtmlCanvasElement>,
     canvas_size: PhysicalSize<u32>,
-
     render_pipeline: wgpu::RenderPipeline,
+    polygon_buffer: PolygonBuffer<PolygonVertex>,
     
     // challenge variables
     // challenge_render_pipeline: wgpu::RenderPipeline,
@@ -77,7 +78,7 @@ impl State {
             desired_maximum_frame_latency: 2,
         };
 
-        // handle shaders & buffers
+        // handle shaders
         let clear_color = wgpu::Color {
             r: 0.1,
             g: 0.2,
@@ -85,7 +86,7 @@ impl State {
             a: 1.0,
         };
 
-        let shader = wgpu::include_wgsl!("./shaders/shader.wgsl");
+        let shader = wgpu::include_wgsl!("./shaders/buffer_shader.wgsl");
 
         let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("Render Pipeline Layout"),
@@ -97,6 +98,9 @@ impl State {
 
         // let challenge_shader = wgpu::include_wgsl!("./shaders/challenge_shader.wgsl");
         // let challenge_render_pipeline = Self::generate_render_pipeline(challenge_shader, &render_pipeline_layout, &device, &config);
+
+        // handle buffers
+        let polygon_buffer = PolygonBuffer::new(&device)
 
         Ok(Self {
             surface,
@@ -110,6 +114,7 @@ impl State {
             // challenge_render_pipeline,
             clear_color,
             toggle: false,
+            vertex_buffer,
         })
     }
 
@@ -121,14 +126,16 @@ impl State {
             layout: Some(layout),
             vertex: wgpu::VertexState {
                 module: &shader,
-                entry_point: Some("vs_main"), // 1.
-                buffers: &[], // 2.
+                entry_point: Some("vs_main"), // entry point in our wgsl code
+                buffers: &[
+                    Vertex::desc(),
+                ], // any buffers we may require
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
             },
-            fragment: Some(wgpu::FragmentState { // 3.
+            fragment: Some(wgpu::FragmentState { // defining our fragment
                 module: &shader,
                 entry_point: Some("fs_main"),
-                targets: &[Some(wgpu::ColorTargetState { // 4.
+                targets: &[Some(wgpu::ColorTargetState { // defining the targets for our fragment
                     format: config.format,
                     blend: Some(wgpu::BlendState::REPLACE),
                     write_mask: wgpu::ColorWrites::ALL,
@@ -229,7 +236,8 @@ impl State {
             });
 
             render_pass.set_pipeline(&self.render_pipeline);
-            render_pass.draw(0..3, 0..1);
+            render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
+            render_pass.draw(0..NUM_VERTICES, 0..1);
         }
 
         self.queue.submit([encoder.finish()]);
