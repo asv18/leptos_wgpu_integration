@@ -2,13 +2,12 @@ use std::marker::PhantomData;
 
 use wgpu::{util::DeviceExt, Device};
 
-use crate::utils::types::buffers::Vertex;
+use crate::utils::types::{buffers::Vertex, size::PhysicalSize};
 
 pub struct PolygonBuffer<T: bytemuck::Pod + bytemuck::Zeroable + Vertex> {
     // check macro kata to make stuff like this more readable
     pub vertex_buffer: wgpu::Buffer,
     pub index_buffer: wgpu::Buffer,
-    pub _num_vertices: u32,
     pub num_indices: u32,
     _marker: PhantomData<T>,
 }
@@ -27,16 +26,24 @@ impl<T: bytemuck::Pod + bytemuck::Zeroable + Vertex> PolygonBuffer<T> {
             usage: wgpu::BufferUsages::INDEX,
         });
 
-        let _num_vertices = vertices.len() as u32;
-
         let num_indices = indices.len() as u32;
 
         Self {
             vertex_buffer,
             index_buffer,
-            _num_vertices,
             num_indices,
             _marker: PhantomData,
         }
+    }
+
+    pub fn polygon_from_sides(
+        device: &Device,
+        canvas_size: &PhysicalSize<u32>,
+        num_sides: u16,
+        radius: f32,
+    ) -> Self {
+        let (vertices, indices) = T::gen_polygon(num_sides, radius, canvas_size);
+
+        Self::new(device, &vertices, &indices)
     }
 }

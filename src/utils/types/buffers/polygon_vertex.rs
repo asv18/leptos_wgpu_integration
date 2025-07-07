@@ -1,4 +1,4 @@
-use crate::utils::types::buffers::Vertex;
+use crate::utils::types::{buffers::Vertex, size::PhysicalSize};
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
@@ -31,5 +31,46 @@ impl Vertex for PolygonVertex {
             //     },
             // ],
         }
+    }
+
+    fn gen_polygon(
+        num_sides: u16,
+        radius: f32,
+        canvas_size: &PhysicalSize<u32>,
+    ) -> (Vec<PolygonVertex>, Vec<u16>) {
+        let angle_step = std::f32::consts::TAU / num_sides as f32;
+
+        let aspect_ratio = canvas_size.width as f32 / canvas_size.height as f32;
+
+        // center vertex (for triangle fan)
+        let mut vertices = vec![PolygonVertex {
+            position: [0.0, 0.0, 0.0],
+            color: [1.0, 1.0, 1.0],
+        }];
+
+        // outer vertices
+        for i in 0..=num_sides {
+            let theta = i as f32 * angle_step;
+            let x = radius * theta.cos();
+            let y = radius * theta.sin();
+
+            // Correct for aspect ratio: scale x-axis
+            let corrected_x = x / aspect_ratio;
+
+            vertices.push(PolygonVertex {
+                position: [corrected_x, y, 0.0],
+                color: [(1.0 + corrected_x) / 2.0, (1.0 + y) / 2.0, 1.0],
+            });
+        }
+
+        // generate triangle fan indices
+        let mut indices = Vec::new();
+        for i in 1..=num_sides {
+            indices.push(0); // center
+            indices.push(i);
+            indices.push(i + 1);
+        }
+
+        (vertices, indices)
     }
 }

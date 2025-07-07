@@ -2,7 +2,7 @@ use std::sync::Arc;
 use std::str::FromStr;
 use leptos::web_sys;
 
-use crate::utils::types::buffers::polygon_vertex::PolygonVertex;
+use crate::utils::types::buffers::{Vertex, polygon_vertex::PolygonVertex};
 use crate::utils::types::keycode::KeyCode;
 use crate::utils::types::{size::PhysicalSize, buffers::polygon_buffer::PolygonBuffer};
 
@@ -94,13 +94,13 @@ impl State {
             push_constant_ranges: &[],
         });
 
-        let render_pipeline = Self::generate_render_pipeline(shader, &render_pipeline_layout, &device, &config);
+        let render_pipeline = Self::generate_render_pipeline::<PolygonVertex>(shader, &render_pipeline_layout, &device, &config);
 
         // let challenge_shader = wgpu::include_wgsl!("./shaders/challenge_shader.wgsl");
         // let challenge_render_pipeline = Self::generate_render_pipeline(challenge_shader, &render_pipeline_layout, &device, &config);
 
         // handle buffers
-        let polygon_buffer = PolygonBuffer::new(&device)
+        let polygon_buffer = PolygonBuffer::polygon_from_sides(&device, &canvas_size, 5, 0.5);
 
         Ok(Self {
             surface,
@@ -114,11 +114,11 @@ impl State {
             // challenge_render_pipeline,
             clear_color,
             toggle: false,
-            vertex_buffer,
+            polygon_buffer,
         })
     }
 
-    fn generate_render_pipeline(source: wgpu::ShaderModuleDescriptor, layout: &wgpu::PipelineLayout, device: &wgpu::Device, config: &wgpu::SurfaceConfiguration) -> wgpu::RenderPipeline {
+    fn generate_render_pipeline<T: Vertex>(source: wgpu::ShaderModuleDescriptor, layout: &wgpu::PipelineLayout, device: &wgpu::Device, config: &wgpu::SurfaceConfiguration) -> wgpu::RenderPipeline {
         let shader = device.create_shader_module(source);
         
         device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
@@ -128,7 +128,7 @@ impl State {
                 module: &shader,
                 entry_point: Some("vs_main"), // entry point in our wgsl code
                 buffers: &[
-                    Vertex::desc(),
+                    T::desc(),
                 ], // any buffers we may require
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
             },
@@ -236,8 +236,9 @@ impl State {
             });
 
             render_pass.set_pipeline(&self.render_pipeline);
-            render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-            render_pass.draw(0..NUM_VERTICES, 0..1);
+            render_pass.set_vertex_buffer(0, self.polygon_buffer.vertex_buffer.slice(..));
+            render_pass.set_index_buffer(self.polygon_buffer.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
+            render_pass.draw_indexed(0..self.polygon_buffer.num_indices, 0, 0..1);
         }
 
         self.queue.submit([encoder.finish()]);
