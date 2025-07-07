@@ -1156,6 +1156,7 @@ dependencies = [
 name = "leptos_wgpu_integration"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "console_error_panic_hook",
  "console_log",
  "leptos",

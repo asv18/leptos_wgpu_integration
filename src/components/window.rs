@@ -1,7 +1,13 @@
+use std::cell::RefCell;
+use std::rc::Rc;
+use std::sync::Arc;
+
 use leptos::{html::Canvas, prelude::*};
 use leptos::wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
+use wasm_bindgen_futures::wasm_bindgen::prelude::Closure;
 use crate::components::types::size::PhysicalSize;
+use crate::components::types::state::State;
 
 #[allow(non_snake_case)]
 #[component]
@@ -9,99 +15,45 @@ pub fn Window() -> impl IntoView {
     let canvas_node_ref = NodeRef::<Canvas>::new();
 
     canvas_node_ref.on_load(move |canvas| {
-        let canvas = canvas.clone();
+        let canvas = Arc::new(canvas.clone());
+        
+        let width = canvas.client_width() as u32;
+        let height = canvas.client_height() as u32;
+        
+        canvas.set_width(width);
+        canvas.set_height(height);
         
         spawn_local(async move {
-            let canvas: leptos::web_sys::HtmlCanvasElement = canvas.dyn_into().expect("Expected canvas element");
-            canvas.set_width(canvas.client_width() as u32);
-            canvas.set_height(canvas.client_height() as u32);
-            
-            let size = PhysicalSize::<u32> {
-                width: canvas.width(),
-                height: canvas.height(),
-            };
+            let state: Rc<RefCell<State>> = Rc::new(RefCell::new(State::new(canvas.clone()).await.unwrap()));
 
-            let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor {
-                backends: wgpu::Backends::default(),
-                ..Default::default()
-            });
+            state.borrow_mut().resize(PhysicalSize { width: width, height: height });
 
-            let surface = instance.create_surface(wgpu::SurfaceTarget::Canvas(canvas)).unwrap();
+            let f: Rc<RefCell<Option<Closure<dyn FnMut()>>>> = Rc::new(RefCell::new(None));
+            let f_clone: Rc<RefCell<Option<Closure<dyn FnMut()>>>> = f.clone();
 
-            let adapter = instance.request_adapter(&wgpu::RequestAdapterOptions {
-                power_preference: wgpu::PowerPreference::default(),
-                compatible_surface: Some(&surface),
-                force_fallback_adapter: false,
-            }).await.unwrap();
+            let window = Rc::new(leptos::web_sys::window().expect("no global window"));
 
-            let (device, queue) = adapter.request_device(
-            &wgpu::DeviceDescriptor {
-                    required_features: wgpu::Features::empty(),
-                    // WebGL doesn't support all of wgpu's features, so if
-                    // we're building for the web, we'll have to disable some.
-                    required_limits: if cfg!(target_arch = "wasm32") {
-                        wgpu::Limits::downlevel_webgl2_defaults()
-                    } else {
-                        wgpu::Limits::default()
-                    },
-                    label: None,
-                    memory_hints: Default::default(),
-                    trace: wgpu::Trace::Off,
-                },
-            ).await.unwrap();
+            let state_for_render = state.clone();
 
-            let surface_caps = surface.get_capabilities(&adapter);
+            *f_clone.borrow_mut() = Some(Closure::wrap(Box::new({
+                let window = window.clone();
+                move || {
+                    // Call the render function
+                    let _ = state_for_render.borrow_mut().render();
 
-            let surface_format = surface_caps.formats.iter()
-                .find(|f| f.is_srgb())
-                .copied()
-                .unwrap_or(surface_caps.formats[0]);
-            let config = wgpu::SurfaceConfiguration {
-                usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-                format: surface_format,
-                width: size.width,
-                height: size.height,
-                present_mode: surface_caps.present_modes[0],
-                alpha_mode: surface_caps.alpha_modes[0],
-                view_formats: vec![],
-                desired_maximum_frame_latency: 2,
-            };
+                    // Schedule next frame
+                    window
+                        .request_animation_frame(f.borrow().as_ref().unwrap().as_ref().unchecked_ref())
+                        .expect("Failed to request animation frame");
+                }
+            }) as Box<dyn FnMut()>));
 
-            surface.configure(&device, &config);
+            window
+                .request_animation_frame(f_clone.borrow().as_ref().unwrap().as_ref().unchecked_ref())
+                .expect("Failed to start render loop");
 
-            let frame = surface
-                .get_current_texture()
-                .expect("Failed to acquire next swap chain texture");
-            let view = frame.texture.create_view(&wgpu::TextureViewDescriptor::default());
-
-            let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("Render Encoder"),
-            });
-
-            {
-                let _render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                    label: Some("Render Pass"),
-                    color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                        view: &view,
-                        resolve_target: None,
-                        ops: wgpu::Operations {
-                            load: wgpu::LoadOp::Clear(wgpu::Color {
-                                r: 0.1,
-                                g: 0.2,
-                                b: 0.3,
-                                a: 1.0,
-                            }),
-                            store: wgpu::StoreOp::Store,
-                        },
-                    })],
-                    depth_stencil_attachment: None,
-                    timestamp_writes: None,
-                    occlusion_query_set: None,
-                });
-            }
-
-            queue.submit(Some(encoder.finish()));
-            frame.present();
+            resize_callback(&window, state.clone(), canvas.clone());
+            keydown_callback(&window, state.clone());
         });
     });
 
@@ -111,4 +63,42 @@ pub fn Window() -> impl IntoView {
             style="width: 100vw; height: 100vh; display: block"
         ></canvas>
     }
+}
+
+fn keydown_callback(window: &Rc<wgpu::web_sys::Window>, state: Rc<RefCell<State>>) {
+    let keydown_closure: Closure<dyn FnMut(leptos::web_sys::KeyboardEvent)> = Closure::wrap(Box::new({
+        move |event: leptos::web_sys::KeyboardEvent| {
+            state.borrow_mut().handle_key(event);
+        }
+    }) as Box<dyn FnMut(leptos::web_sys::KeyboardEvent)>);
+
+    window
+        .add_event_listener_with_callback("keydown", keydown_closure.as_ref().unchecked_ref())
+        .unwrap();
+
+    keydown_closure.forget()
+}
+
+fn resize_callback(window: &Rc<wgpu::web_sys::Window>, state: Rc<RefCell<State>>, canvas: Arc<wgpu::web_sys::HtmlCanvasElement>) {
+    let resize_closure: Closure<dyn FnMut()> = Closure::wrap(Box::new({
+
+        move || {
+            let width = canvas.client_width() as u32;
+            let height = canvas.client_height() as u32;
+
+            canvas.set_width(width);
+            canvas.set_height(height);
+
+            state.borrow_mut().resize(PhysicalSize { width, height });
+        }
+    }) as Box<dyn FnMut()>);
+
+    window
+        .add_event_listener_with_callback(
+            "resize",
+            resize_closure.as_ref().unchecked_ref()
+        )
+        .unwrap();
+
+    resize_closure.forget()
 }

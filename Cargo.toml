@@ -17,6 +17,7 @@ log = "0.4"
 console_error_panic_hook = "0.1"
 wasm-bindgen-futures = "0.4.50"
 wgpu = "25.0.2"
+anyhow = "1.0.98"
 
 [profile.release]
 opt-level = 'z'
