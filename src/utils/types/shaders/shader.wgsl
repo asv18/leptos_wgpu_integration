@@ -1,4 +1,5 @@
 struct OurVertexShaderOutput {
+    // built in, not an inter-stage variable
     @builtin(position) position: vec4f,
     @location(0) color: vec4f,
 };
@@ -25,4 +26,11 @@ struct OurVertexShaderOutput {
 
 @fragment fn fs_main(fsInput: OurVertexShaderOutput) -> @location(0) vec4f {
     return fsInput.color;
+    // let red = vec4f(1, 0, 0, 1);
+    // let cyan = vec4f(0, 1, 1, 1);
+
+    // let grid = vec2u(fsInput.position.xy) / 8;
+    // let checker = (grid.x + grid.y) % 2 == 1;
+
+    // return select(red, cyan, checker);
 }
