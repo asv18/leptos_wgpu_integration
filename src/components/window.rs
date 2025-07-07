@@ -6,8 +6,9 @@ use leptos::{html::Canvas, prelude::*};
 use leptos::wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
 use wasm_bindgen_futures::wasm_bindgen::prelude::Closure;
-use crate::components::types::size::PhysicalSize;
-use crate::components::types::state::State;
+
+use crate::utils::helpers::callbacks::*;
+use crate::utils::types::{size::PhysicalSize, state::State};
 
 #[allow(non_snake_case)]
 #[component]
@@ -26,7 +27,7 @@ pub fn Window() -> impl IntoView {
         spawn_local(async move {
             let state: Rc<RefCell<State>> = Rc::new(RefCell::new(State::new(canvas.clone()).await.unwrap()));
 
-            state.borrow_mut().resize(PhysicalSize { width: width, height: height });
+            state.borrow_mut().resize(PhysicalSize { width, height });
 
             let f: Rc<RefCell<Option<Closure<dyn FnMut()>>>> = Rc::new(RefCell::new(None));
             let f_clone: Rc<RefCell<Option<Closure<dyn FnMut()>>>> = f.clone();
@@ -54,6 +55,7 @@ pub fn Window() -> impl IntoView {
 
             resize_callback(&window, state.clone(), canvas.clone());
             keydown_callback(&window, state.clone());
+            // mouse_moved_callback(&window, state.clone());
         });
     });
 
@@ -63,42 +65,4 @@ pub fn Window() -> impl IntoView {
             style="width: 100vw; height: 100vh; display: block"
         ></canvas>
     }
-}
-
-fn keydown_callback(window: &Rc<wgpu::web_sys::Window>, state: Rc<RefCell<State>>) {
-    let keydown_closure: Closure<dyn FnMut(leptos::web_sys::KeyboardEvent)> = Closure::wrap(Box::new({
-        move |event: leptos::web_sys::KeyboardEvent| {
-            state.borrow_mut().handle_key(event);
-        }
-    }) as Box<dyn FnMut(leptos::web_sys::KeyboardEvent)>);
-
-    window
-        .add_event_listener_with_callback("keydown", keydown_closure.as_ref().unchecked_ref())
-        .unwrap();
-
-    keydown_closure.forget()
-}
-
-fn resize_callback(window: &Rc<wgpu::web_sys::Window>, state: Rc<RefCell<State>>, canvas: Arc<wgpu::web_sys::HtmlCanvasElement>) {
-    let resize_closure: Closure<dyn FnMut()> = Closure::wrap(Box::new({
-
-        move || {
-            let width = canvas.client_width() as u32;
-            let height = canvas.client_height() as u32;
-
-            canvas.set_width(width);
-            canvas.set_height(height);
-
-            state.borrow_mut().resize(PhysicalSize { width, height });
-        }
-    }) as Box<dyn FnMut()>);
-
-    window
-        .add_event_listener_with_callback(
-            "resize",
-            resize_closure.as_ref().unchecked_ref()
-        )
-        .unwrap();
-
-    resize_closure.forget()
 }

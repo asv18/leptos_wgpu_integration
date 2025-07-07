@@ -1,7 +1,9 @@
 use std::sync::Arc;
-
-use crate::components::types::size::PhysicalSize;
+use std::str::FromStr;
 use leptos::web_sys;
+
+use crate::utils::types::keycode::KeyCode;
+use crate::utils::types::size::PhysicalSize;
 
 pub struct State {
     surface: wgpu::Surface<'static>,
@@ -13,6 +15,12 @@ pub struct State {
     canvas_size: PhysicalSize<u32>,
 
     render_pipeline: wgpu::RenderPipeline,
+    
+    // challenge variables
+    // challenge_render_pipeline: wgpu::RenderPipeline,
+    clear_color: wgpu::Color,
+
+    toggle: bool,
 }
 
 impl State {
@@ -70,17 +78,25 @@ impl State {
         };
 
         // handle shaders
+        let clear_color = wgpu::Color {
+            r: 0.1,
+            g: 0.2,
+            b: 0.3,
+            a: 1.0,
+        };
 
-        let shader = wgpu::include_wgsl!("../shader.wgsl");
+        let shader = wgpu::include_wgsl!("./shaders/shader.wgsl");
 
-        let render_pipeline_layout =
-            device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-                label: Some("Render Pipeline Layout"),
-                bind_group_layouts: &[],
-                push_constant_ranges: &[],
-            });
+        let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("Render Pipeline Layout"),
+            bind_group_layouts: &[],
+            push_constant_ranges: &[],
+        });
 
         let render_pipeline = Self::generate_render_pipeline(shader, &render_pipeline_layout, &device, &config);
+
+        // let challenge_shader = wgpu::include_wgsl!("./shaders/challenge_shader.wgsl");
+        // let challenge_render_pipeline = Self::generate_render_pipeline(challenge_shader, &render_pipeline_layout, &device, &config);
 
         Ok(Self {
             surface,
@@ -91,6 +107,9 @@ impl State {
             canvas,
             canvas_size,
             render_pipeline,
+            // challenge_render_pipeline,
+            clear_color,
+            toggle: false,
         })
     }
 
@@ -158,11 +177,19 @@ impl State {
 
     // # TODO: handle key
     pub fn handle_key(&mut self, event: leptos::web_sys::KeyboardEvent) {
+        // for now - if needed can remove to handle the same key being pressed over and over
         if event.repeat() {
             return;
         }
 
-        let code = event.key_code();
+        let code = KeyCode::from_str(&event.key().to_ascii_lowercase()).unwrap();
+
+        match code {
+            KeyCode::KeyCodeSpace => {
+                self.toggle = !self.toggle;
+            },
+            _ => {}
+        }
     }
     
     // # TODO: update
@@ -192,12 +219,7 @@ impl State {
                     view: &view,
                     resolve_target: None,
                     ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(wgpu::Color {
-                            r: 0.1,
-                            g: 0.2,
-                            b: 0.3,
-                            a: 1.0,
-                        }),
+                        load: wgpu::LoadOp::Clear(self.clear_color),
                         store: wgpu::StoreOp::Store,
                     },
                 })],
@@ -206,13 +228,30 @@ impl State {
                 timestamp_writes: None,
             });
 
-            render_pass.set_pipeline(&self.render_pipeline); // 2.
-            render_pass.draw(0..3, 0..1); // 3.
+            render_pass.set_pipeline(&self.render_pipeline);
+            render_pass.draw(0..3, 0..1);
         }
 
         self.queue.submit([encoder.finish()]);
         output.present();
 
         Ok(())
+    }
+}
+
+// challenge impls
+#[allow(dead_code)]
+impl State {
+    pub fn mouse_challenge(&mut self, loc: PhysicalSize<u32>) {
+        let x = loc.width as f64 / self.canvas_size.width as f64;
+        let y = loc.height as f64 / self.canvas_size.height as f64;
+        let z = (loc.width + loc.height) as f64 / (self.canvas_size.width + self.canvas_size.height) as f64;
+
+        self.clear_color = wgpu::Color {
+            r: x,
+            g: y,
+            b: z,
+            a: 1.0,
+        }
     }
 }
