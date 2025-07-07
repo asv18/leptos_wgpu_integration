@@ -32,11 +32,11 @@ impl State {
         };
 
         let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor {
-            backends: wgpu::Backends::default(),
+            backends: wgpu::Backends::BROWSER_WEBGPU,
             ..Default::default()
         });
 
-        let surface = instance.create_surface(wgpu::SurfaceTarget::Canvas(canvas.as_ref().clone())).unwrap();
+        let surface = instance.create_surface(wgpu::SurfaceTarget::Canvas(canvas.as_ref().clone()))?;
 
         let adapter = instance.request_adapter(&wgpu::RequestAdapterOptions {
             power_preference: wgpu::PowerPreference::default(),
@@ -77,7 +77,7 @@ impl State {
             desired_maximum_frame_latency: 2,
         };
 
-        // handle shaders
+        // handle shaders & buffers
         let clear_color = wgpu::Color {
             r: 0.1,
             g: 0.2,

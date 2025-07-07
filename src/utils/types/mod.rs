@@ -1,3 +1,2 @@
+pub(crate) mod keycode;
 pub mod size;
-pub mod state;
-mod keycode;
