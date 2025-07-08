@@ -74,4 +74,12 @@ impl Vertex for PolygonVertex {
 
         (vertices, indices)
     }
+
+    fn get_position(&self) -> [f32; 3] {
+        self.position
+    }
+    
+    fn set_position(&mut self, new: [f32; 3]) {
+        self.position = new;
+    }
 }

@@ -175,6 +175,8 @@ impl State {
 
             self.surface.configure(&self.device, &self.config);
             self.is_surface_configured = true;
+
+            // self.polygon_buffer.resize_polygon(&self.device, &self.canvas_size);
         }
     }
 
@@ -183,13 +185,13 @@ impl State {
     }
 
     // # TODO: handle key
-    pub fn handle_key(&mut self, event: leptos::web_sys::KeyboardEvent) {
+    pub fn handle_key(&mut self, event: leptos::web_sys::KeyboardEvent) -> Result<(), <KeyCode as ::core::str::FromStr>::Err> {
         // for now - if needed can remove to handle the same key being pressed over and over
         if event.repeat() {
-            return;
+            return Ok(());
         }
 
-        let code = KeyCode::from_str(&event.key().to_ascii_lowercase()).unwrap();
+        let code = KeyCode::from_str(&event.key().to_ascii_lowercase())?;
 
         match code {
             KeyCode::KeyCodeSpace => {
@@ -197,6 +199,8 @@ impl State {
             },
             _ => {}
         }
+
+        Ok(())
     }
     
     // # TODO: update

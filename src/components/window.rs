@@ -25,6 +25,8 @@ pub fn Window() -> impl IntoView {
         canvas.set_height(height);
         
         spawn_local(async move {
+            leptos::logging::log!("Spawning local");
+            
             let state: Rc<RefCell<State>> = Rc::new(RefCell::new(State::new(canvas.clone()).await.unwrap()));
 
             state.borrow_mut().resize(PhysicalSize { width, height });

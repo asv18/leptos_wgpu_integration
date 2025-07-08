@@ -45,6 +45,8 @@ pub fn resize_callback(
 ) {
     let resize_closure: Closure<dyn FnMut()> = Closure::wrap(Box::new({
         move || {
+            // leptos::logging::log!("Resizing");
+
             let width = canvas.client_width() as u32;
             let height = canvas.client_height() as u32;
 
