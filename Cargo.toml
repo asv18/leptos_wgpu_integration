@@ -21,6 +21,7 @@ anyhow = "1.0.98"
 strum = "0.27.1"
 strum_macros = "0.27.1"
 bytemuck = { version = "1.23.1", features = ["derive"] }
+cgmath = "0.18.0"
 
 [profile.release]
 opt-level = 'z'

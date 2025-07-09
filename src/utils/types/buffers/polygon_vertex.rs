@@ -33,44 +33,25 @@ impl Vertex for PolygonVertex {
         }
     }
 
-    // lags like crazy on my computer - look into caching?
-    fn gen_polygon(
-        num_sides: u16,
-        radius: f32,
-        canvas_size: &PhysicalSize<u32>,
-    ) -> (Vec<PolygonVertex>, Vec<u16>) {
-        let angle_step = std::f32::consts::TAU / num_sides as f32;
+    // lags like crazy on my computer - look into why?
+    fn gen_polygon(num_sides: u16, radius: f32) -> (Vec<PolygonVertex>, Vec<u16>) {
+        let angle = std::f32::consts::PI * 2.0 / num_sides as f32;
+        let vertices = (0..(num_sides * 3))
+            .map(|i| {
+                let theta = angle * i as f32;
+                PolygonVertex {
+                    position: [radius * theta.sin(), radius * theta.cos(), 0.0],
+                    color: [radius * theta.sin(), radius * theta.cos(), 1.0],
+                }
+                // [(1.0 + theta.cos()) / 2.0, (1.0 + theta.sin()) / 2.0, 1.0]
+            })
+            .collect();
 
-        let aspect_ratio = canvas_size.width as f32 / canvas_size.height as f32;
-
-        // center vertex (for triangle fan)
-        let mut vertices = vec![PolygonVertex {
-            position: [0.0, 0.0, 0.0],
-            color: [1.0, 1.0, 1.0],
-        }];
-
-        // outer vertices
-        for i in 0..=num_sides {
-            let theta = i as f32 * angle_step;
-            let x = radius * theta.cos();
-            let y = radius * theta.sin();
-
-            // Correct for aspect ratio: scale x-axis
-            let corrected_x = x / aspect_ratio;
-
-            vertices.push(PolygonVertex {
-                position: [corrected_x, y, 0.0],
-                color: [(1.0 + corrected_x) / 2.0, (1.0 + y) / 2.0, 1.0],
-            });
-        }
-
-        // generate triangle fan indices
-        let mut indices = Vec::new();
-        for i in 1..=num_sides {
-            indices.push(0); // center
-            indices.push(i);
-            indices.push(i + 1);
-        }
+        let num_triangles = (num_sides * 3) - 2;
+        let indices = (1u16..num_triangles + 1)
+            .into_iter()
+            .flat_map(|i| vec![0, i + 1, i])
+            .collect();
 
         (vertices, indices)
     }
@@ -78,7 +59,7 @@ impl Vertex for PolygonVertex {
     fn get_position(&self) -> [f32; 3] {
         self.position
     }
-    
+
     fn set_position(&mut self, new: [f32; 3]) {
         self.position = new;
     }

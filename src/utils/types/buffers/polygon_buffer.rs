@@ -40,13 +40,8 @@ impl<T: bytemuck::Pod + bytemuck::Zeroable + Vertex> PolygonBuffer<T> {
         }
     }
 
-    pub fn polygon_from_sides(
-        device: &Device,
-        canvas_size: &PhysicalSize<u32>,
-        num_sides: u16,
-        radius: f32,
-    ) -> Self {
-        let (vertices, indices) = T::gen_polygon(num_sides, radius, canvas_size);
+    pub fn polygon_from_sides(device: &Device, num_sides: u16, radius: f32) -> Self {
+        let (vertices, indices) = T::gen_polygon(num_sides, radius);
 
         Self::new(device, &vertices, &indices)
     }

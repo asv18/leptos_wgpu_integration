@@ -6,11 +6,7 @@ pub mod polygon_vertex;
 pub trait Vertex: Sized {
     const ATTRIBUTES: [wgpu::VertexAttribute; 2];
     fn desc() -> wgpu::VertexBufferLayout<'static>;
-    fn gen_polygon(
-        sides: u16,
-        radius: f32,
-        canvas_size: &PhysicalSize<u32>,
-    ) -> (Vec<Self>, Vec<u16>);
+    fn gen_polygon(sides: u16, radius: f32) -> (Vec<Self>, Vec<u16>);
 
     fn get_position(&self) -> [f32; 3];
     fn set_position(&mut self, new: [f32; 3]);
