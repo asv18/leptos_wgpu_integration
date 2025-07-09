@@ -308,7 +308,7 @@ impl State {
             });
 
             render_pass.set_pipeline(&self.render_pipeline);
-            render_pass.set_bind_group(1, &self.camera_bind_group, &[]);
+            render_pass.set_bind_group(0, &self.camera_bind_group, &[]);
 
             render_pass.set_vertex_buffer(0, self.polygon_buffer.vertex_buffer.slice(..));
             render_pass.set_index_buffer(self.polygon_buffer.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
