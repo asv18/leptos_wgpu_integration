@@ -42,6 +42,8 @@ pub fn Window() -> impl IntoView {
                 let window = window.clone();
                 move || {
                     // Call the render function
+                    // leptos::logging::log!("redraw");
+                    state_for_render.borrow_mut().update();
                     let _ = state_for_render.borrow_mut().render();
 
                     // Schedule next frame

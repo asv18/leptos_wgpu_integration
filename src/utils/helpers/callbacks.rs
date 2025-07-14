@@ -27,7 +27,7 @@ pub fn keydown_callback(window: &Rc<wgpu::web_sys::Window>, state: Rc<RefCell<St
     let keydown_closure: Closure<dyn FnMut(leptos::web_sys::KeyboardEvent)> =
         Closure::wrap(Box::new({
             move |event: leptos::web_sys::KeyboardEvent| {
-                state.borrow_mut().handle_key(event);
+                state.borrow_mut().handle_key(event).unwrap();
             }
         }) as Box<dyn FnMut(leptos::web_sys::KeyboardEvent)>);
 

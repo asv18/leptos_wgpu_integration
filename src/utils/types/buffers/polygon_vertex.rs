@@ -34,24 +34,25 @@ impl Vertex for PolygonVertex {
     }
 
     // lags like crazy on my computer - look into why?
-    fn gen_polygon(num_sides: u16, radius: f32) -> (Vec<PolygonVertex>, Vec<u16>) {
-        let angle = std::f32::consts::PI * 2.0 / num_sides as f32;
-        let vertices = (0..(num_sides * 3))
-            .map(|i| {
-                let theta = angle * i as f32;
-                PolygonVertex {
-                    position: [radius * theta.sin(), radius * theta.cos(), 0.0],
-                    color: [radius * theta.sin(), radius * theta.cos(), 1.0],
-                }
-                // [(1.0 + theta.cos()) / 2.0, (1.0 + theta.sin()) / 2.0, 1.0]
-            })
-            .collect();
+    fn gen_polygon(n: u16, radius: f32, aspect: f32) -> (Vec<PolygonVertex>, Vec<u16>) {
+        use std::f32::consts::PI;
 
-        let num_triangles = (num_sides * 3) - 2;
-        let indices = (1u16..num_triangles + 1)
-            .into_iter()
-            .flat_map(|i| vec![0, i + 1, i])
-            .collect();
+        let mut vertices = Vec::with_capacity(n as usize);
+        let mut indices = Vec::with_capacity(((n - 2) * 3) as usize);
+
+        for i in 0..n {
+            let angle = 2.0 * PI * (i as f32) / (n as f32);
+            let x = radius * angle.cos() / aspect;
+            let y = radius * angle.sin();
+            vertices.push(PolygonVertex {
+                position: [x, y, 0.0],
+                color: [1.0, 0.0, 0.0], // Example color
+            });
+        }
+
+        for i in 1..(n - 1) {
+            indices.extend_from_slice(&[0, i as u16, (i + 1) as u16]);
+        }
 
         (vertices, indices)
     }

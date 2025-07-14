@@ -5,6 +5,7 @@ use wgpu::util::DeviceExt;
 
 use crate::utils::types::buffers::{Vertex, polygon_vertex::PolygonVertex};
 use crate::utils::types::camera::camera::{Camera};
+use crate::utils::types::camera::camera_controller::CameraController;
 use crate::utils::types::camera::camera_uniform::CameraUniform;
 use crate::utils::types::keycode::KeyCode;
 use crate::utils::types::{size::PhysicalSize, buffers::polygon_buffer::PolygonBuffer};
@@ -23,6 +24,7 @@ pub struct State {
     camera: Camera,
     camera_uniform: CameraUniform,
     camera_buffer: wgpu::Buffer,
+    camera_controller: CameraController,
     camera_bind_group: wgpu::BindGroup,
     // challenge variables
     // challenge_render_pipeline: wgpu::RenderPipeline,
@@ -96,21 +98,23 @@ impl State {
         let shader = wgpu::include_wgsl!("./shaders/buffer_shader.wgsl");
 
         // let challenge_shader = wgpu::include_wgsl!("./shaders/challenge_shader.wgsl");
-        // let challenge_render_pipeline = Self::generate_render_pipeline(challenge_shader, &render_pipeline_layout, &device, &config);
+        // let challenge_render_pipeline = Self::generate_render_pipeline(challenge_shader, &render_pipeline_layout, &device, &config); #helloworldmeepmorp
+
+        let aspect = canvas_size.width as f32 / canvas_size.height as f32;
 
         // handle buffers
-        let polygon_buffer = PolygonBuffer::polygon_from_sides(&device, 5, 0.5);
+        let polygon_buffer = PolygonBuffer::polygon_from_sides(&device, 5, 0.5, aspect);
 
         // handle camera
         let camera = Camera::new(
             // position the camera 1 unit up and 2 units back
             // +z is out of the screen
-            (0.0, 1.0, 2.0).into(),
+            (0.0, 0.0, 2.0).into(),
             // have it look at the origin
             (0.0, 0.0, 0.0).into(),
             // which way is "up"
             cgmath::Vector3::unit_y(),
-            config.width as f32 / config.height as f32,
+            aspect,
             45.0,
             0.1,
             100.0,
@@ -155,6 +159,8 @@ impl State {
             label: Some("camera_bind_group"),
         });
 
+        let camera_controller = CameraController::new(0.2);
+
         // handle rendering
         let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("Render Pipeline Layout"),
@@ -179,6 +185,7 @@ impl State {
             camera_uniform,
             camera_buffer,
             camera_bind_group,
+            camera_controller,
             // challenge_render_pipeline,
             clear_color,
             toggle: false,
@@ -248,24 +255,26 @@ impl State {
         }
     }
 
-    pub fn canvas(&self) -> &leptos::web_sys::HtmlCanvasElement {
-        &self.canvas
-    }
+    // pub fn canvas(&self) -> &leptos::web_sys::HtmlCanvasElement {
+    //     &self.canvas
+    // }
 
     // # TODO: handle key
     pub fn handle_key(&mut self, event: leptos::web_sys::KeyboardEvent) -> Result<(), <KeyCode as ::core::str::FromStr>::Err> {
+        let code = KeyCode::from_str(&event.key().to_ascii_lowercase())?;
+
         // for now - if needed can remove to handle the same key being pressed over and over
         if event.repeat() {
             return Ok(());
         }
 
-        let code = KeyCode::from_str(&event.key().to_ascii_lowercase())?;
-
         match code {
             KeyCode::KeyCodeSpace => {
                 self.toggle = !self.toggle;
             },
-            _ => {}
+            _ => {
+                // self.camera_controller.process_events(&code, true);
+            }
         }
 
         Ok(())
@@ -273,7 +282,9 @@ impl State {
     
     // # TODO: update
     pub fn update(&mut self) {
-
+        self.camera_controller.update_camera(&mut self.camera);
+        self.camera_uniform.update_view_proj(&self.camera);
+        self.queue.write_buffer(&self.camera_buffer, 0, bytemuck::cast_slice(&[self.camera_uniform]));
     }
 
     pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
