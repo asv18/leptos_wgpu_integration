@@ -57,13 +57,7 @@ impl State {
         let (device, queue) = adapter.request_device(
         &wgpu::DeviceDescriptor {
                 required_features: wgpu::Features::empty(),
-                // WebGL doesn't support all of wgpu's features, so if
-                // we're building for the web, we'll have to disable some.
-                required_limits: if cfg!(target_arch = "wasm32") {
-                    wgpu::Limits::downlevel_webgl2_defaults()
-                } else {
-                    wgpu::Limits::default()
-                },
+                required_limits: wgpu::Limits::downlevel_webgl2_defaults(),
                 label: None,
                 memory_hints: Default::default(),
                 trace: wgpu::Trace::Off,
