@@ -2,14 +2,12 @@ use std::marker::PhantomData;
 
 use wgpu::{util::DeviceExt, Device};
 
-use crate::utils::types::{buffers::Vertex, size::PhysicalSize};
+use crate::utils::types::buffers::Vertex;
 
 pub struct PolygonBuffer<T: bytemuck::Pod + bytemuck::Zeroable + Vertex> {
     // check macro kata to make stuff like this more readable
     pub vertex_buffer: wgpu::Buffer,
-    vertices: Vec<T>,
     pub index_buffer: wgpu::Buffer,
-    indices: Vec<u16>,
     pub num_indices: u32,
     _marker: PhantomData<T>,
 }
@@ -32,9 +30,7 @@ impl<T: bytemuck::Pod + bytemuck::Zeroable + Vertex> PolygonBuffer<T> {
 
         Self {
             vertex_buffer,
-            vertices: vertices.into(),
             index_buffer,
-            indices: indices.into(),
             num_indices,
             _marker: PhantomData,
         }

@@ -50,4 +50,5 @@ pub enum KeyCode {
 
     // misc.
     #[strum(serialize = " ")] KeyCodeSpace,
+    Unknown,
 }

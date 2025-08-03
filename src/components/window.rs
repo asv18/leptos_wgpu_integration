@@ -8,7 +8,7 @@ use wasm_bindgen_futures::spawn_local;
 use wasm_bindgen_futures::wasm_bindgen::prelude::Closure;
 
 use crate::utils::helpers::callbacks::*;
-use crate::utils::{types::size::PhysicalSize, state::State};
+use crate::utils::state::State;
 
 #[allow(non_snake_case)]
 #[component]
@@ -25,11 +25,11 @@ pub fn Window() -> impl IntoView {
         canvas.set_height(height);
         
         spawn_local(async move {
-            leptos::logging::log!("Spawning local");
+            leptos::logging::log!("Spawning local thread to handle state");
             
-            let state: Rc<RefCell<State>> = Rc::new(RefCell::new(State::new(canvas.clone()).await.unwrap()));
+            let state: Rc<RefCell<State<'static>>> = Rc::new(RefCell::new(State::new(canvas.clone()).await.unwrap()));
 
-            state.borrow_mut().resize(PhysicalSize { width, height });
+            state.borrow_mut().resize(canvas.clone());
 
             let f: Rc<RefCell<Option<Closure<dyn FnMut()>>>> = Rc::new(RefCell::new(None));
             let f_clone: Rc<RefCell<Option<Closure<dyn FnMut()>>>> = f.clone();

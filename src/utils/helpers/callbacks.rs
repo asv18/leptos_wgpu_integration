@@ -1,29 +1,28 @@
 use crate::utils::state::State;
-use crate::utils::types::size::PhysicalSize;
 use std::{cell::RefCell, rc::Rc, sync::Arc};
 use wasm_bindgen_futures::wasm_bindgen::{prelude::Closure, JsCast};
 
-pub fn _mouse_moved_callback(window: &Rc<wgpu::web_sys::Window>, state: Rc<RefCell<State>>) {
-    let mouse_moved_closure: Closure<dyn FnMut(leptos::web_sys::MouseEvent)> =
-        Closure::wrap(Box::new({
-            move |event: leptos::web_sys::MouseEvent| {
-                let mouse_pos = PhysicalSize {
-                    width: event.client_x() as u32,
-                    height: event.client_y() as u32,
-                };
+// pub fn _mouse_moved_callback(window: &Rc<wgpu::web_sys::Window>, state: Rc<RefCell<State<'static>>>) {
+//     let mouse_moved_closure: Closure<dyn FnMut(leptos::web_sys::MouseEvent)> =
+//         Closure::wrap(Box::new({
+//             move |event: leptos::web_sys::MouseEvent| {
+//                 let mouse_pos = PhysicalSize {
+//                     width: event.client_x() as u32,
+//                     height: event.client_y() as u32,
+//                 };
 
-                state.borrow_mut().mouse_challenge(mouse_pos);
-            }
-        }) as Box<dyn FnMut(leptos::web_sys::MouseEvent)>);
+//                 state.borrow_mut().mouse_challenge(mouse_pos);
+//             }
+//         }) as Box<dyn FnMut(leptos::web_sys::MouseEvent)>);
 
-    window
-        .add_event_listener_with_callback("mousemove", mouse_moved_closure.as_ref().unchecked_ref())
-        .unwrap();
+//     window
+//         .add_event_listener_with_callback("mousemove", mouse_moved_closure.as_ref().unchecked_ref())
+//         .unwrap();
 
-    mouse_moved_closure.forget()
-}
+//     mouse_moved_closure.forget()
+// }
 
-pub fn keydown_callback(window: &Rc<wgpu::web_sys::Window>, state: Rc<RefCell<State>>) {
+pub fn keydown_callback(window: &Rc<wgpu::web_sys::Window>, state: Rc<RefCell<State<'static>>>) {
     let keydown_closure: Closure<dyn FnMut(leptos::web_sys::KeyboardEvent)> =
         Closure::wrap(Box::new({
             move |event: leptos::web_sys::KeyboardEvent| {
@@ -40,7 +39,7 @@ pub fn keydown_callback(window: &Rc<wgpu::web_sys::Window>, state: Rc<RefCell<St
 
 pub fn resize_callback(
     window: &Rc<wgpu::web_sys::Window>,
-    state: Rc<RefCell<State>>,
+    state: Rc<RefCell<State<'static>>>,
     canvas: Arc<wgpu::web_sys::HtmlCanvasElement>,
 ) {
     let resize_closure: Closure<dyn FnMut()> = Closure::wrap(Box::new({
@@ -53,7 +52,7 @@ pub fn resize_callback(
             canvas.set_width(width);
             canvas.set_height(height);
 
-            state.borrow_mut().resize(PhysicalSize { width, height });
+            state.borrow_mut().resize(canvas.clone());
         }
     }) as Box<dyn FnMut()>);
 

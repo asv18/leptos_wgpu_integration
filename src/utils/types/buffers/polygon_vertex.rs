@@ -1,4 +1,4 @@
-use crate::utils::types::{buffers::Vertex, size::PhysicalSize};
+use crate::utils::types::buffers::Vertex;
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
@@ -55,13 +55,5 @@ impl Vertex for PolygonVertex {
         }
 
         (vertices, indices)
-    }
-
-    fn get_position(&self) -> [f32; 3] {
-        self.position
-    }
-
-    fn set_position(&mut self, new: [f32; 3]) {
-        self.position = new;
     }
 }
