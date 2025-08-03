@@ -2,25 +2,21 @@ use std::sync::Arc;
 use std::str::FromStr;
 use wgpu::util::DeviceExt;
 
-use crate::utils::types::buffers::{Vertex, polygon_vertex::PolygonVertex};
 use crate::utils::types::keycode::KeyCode;
-use crate::utils::types::{size::PhysicalSize, buffers::polygon_buffer::PolygonBuffer};
+use crate::utils::types::size::PhysicalSize;
 
 pub struct State<'a> {
+    // portion of config structure
     config: wgpu::SurfaceConfiguration,
     is_surface_configured: bool,
     canvas: Arc<leptos::web_sys::HtmlCanvasElement>,
-    polygon_buffer: PolygonBuffer<PolygonVertex>,
 
     // portion of render structure
     surface: wgpu::Surface<'a>,
     render_pipeline: wgpu::RenderPipeline,
     device: wgpu::Device,
     queue: wgpu::Queue,
-    // challenge variables
-    // challenge_render_pipeline: wgpu::RenderPipeline,
     clear_color: wgpu::Color,
-    // toggle: bool,
 }
 
 impl<'a> State<'a> {
@@ -67,12 +63,9 @@ impl<'a> State<'a> {
         let shader = wgpu::include_wgsl!("./shaders/buffer_shader.wgsl");
 
         // handle buffers
-        // aspect to generate regular polygon in canvas
-        let aspect = canvas_size.width as f32 / canvas_size.height as f32;
-        let polygon_buffer = PolygonBuffer::polygon_from_sides(&device, 5, 0.5, aspect);
 
         // handle rendering
-        let render_pipeline = Self::generate_render_pipeline::<PolygonVertex>(
+        let render_pipeline = Self::generate_render_pipeline(
     shader, 
             &device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("Render Pipeline Layout"),
@@ -94,7 +87,6 @@ impl<'a> State<'a> {
             // challenge_render_pipeline,
             clear_color,
             // toggle: false,
-            polygon_buffer,
         })
     }
 
@@ -118,7 +110,7 @@ impl<'a> State<'a> {
         }
     }
 
-    fn generate_render_pipeline<T: Vertex>(source: wgpu::ShaderModuleDescriptor, layout: &wgpu::PipelineLayout, device: &wgpu::Device, config: &wgpu::SurfaceConfiguration) -> wgpu::RenderPipeline {
+    fn generate_render_pipeline<>(source: wgpu::ShaderModuleDescriptor, layout: &wgpu::PipelineLayout, device: &wgpu::Device, config: &wgpu::SurfaceConfiguration) -> wgpu::RenderPipeline {
         let shader = device.create_shader_module(source);
         
         device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
@@ -127,9 +119,7 @@ impl<'a> State<'a> {
             vertex: wgpu::VertexState {
                 module: &shader,
                 entry_point: Some("vs_main"), // entry point in our wgsl code
-                buffers: &[
-                    T::desc(),
-                ], // any buffers we may require
+                buffers: &[], // any buffers we may require
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
             },
             fragment: Some(wgpu::FragmentState { // defining our fragment
@@ -238,10 +228,6 @@ impl<'a> State<'a> {
             });
 
             render_pass.set_pipeline(&self.render_pipeline);
-
-            render_pass.set_vertex_buffer(0, self.polygon_buffer.vertex_buffer.slice(..));
-            render_pass.set_index_buffer(self.polygon_buffer.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
-            render_pass.draw_indexed(0..self.polygon_buffer.num_indices, 0, 0..1);
         }
 
         self.queue.submit([encoder.finish()]);
