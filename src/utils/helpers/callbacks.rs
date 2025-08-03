@@ -1,4 +1,4 @@
-use crate::utils::state::State;
+use crate::utils::graphics::state::State;
 use std::{cell::RefCell, rc::Rc, sync::Arc};
 use wasm_bindgen_futures::wasm_bindgen::{prelude::Closure, JsCast};
 

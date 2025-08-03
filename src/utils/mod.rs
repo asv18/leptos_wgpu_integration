@@ -1,3 +1,2 @@
 pub mod helpers;
-pub mod state;
-pub mod types;
+pub mod graphics;

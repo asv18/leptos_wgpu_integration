@@ -8,7 +8,7 @@ use wasm_bindgen_futures::spawn_local;
 use wasm_bindgen_futures::wasm_bindgen::prelude::Closure;
 
 use crate::utils::helpers::callbacks::*;
-use crate::utils::state::State;
+use crate::utils::graphics::state::State;
 
 #[allow(non_snake_case)]
 #[component]

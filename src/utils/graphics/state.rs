@@ -2,8 +2,8 @@ use std::sync::Arc;
 use std::str::FromStr;
 use wgpu::util::DeviceExt;
 
-use crate::utils::types::keycode::KeyCode;
-use crate::utils::types::size::PhysicalSize;
+use super::types::keycode::KeyCode;
+use super::types::size::PhysicalSize;
 
 pub struct State<'a> {
     // portion of config structure
@@ -60,7 +60,7 @@ impl<'a> State<'a> {
             a: 1.0,
         };
 
-        let shader = wgpu::include_wgsl!("./shaders/buffer_shader.wgsl");
+        let shader = wgpu::include_wgsl!("./shaders/hardcoded_triangle.wgsl");
 
         // handle buffers
 
@@ -133,7 +133,7 @@ impl<'a> State<'a> {
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
             }),
             primitive: wgpu::PrimitiveState {
-                topology: wgpu::PrimitiveTopology::TriangleList, // defining our topology as a list of triangles
+                topology: wgpu::PrimitiveTopology::TriangleList, // defining every three vertices as a triangle
                 strip_index_format: None,
                 front_face: wgpu::FrontFace::Ccw, // having our code read vertices CCW
                 cull_mode: Some(wgpu::Face::Back),
@@ -228,6 +228,7 @@ impl<'a> State<'a> {
             });
 
             render_pass.set_pipeline(&self.render_pipeline);
+            render_pass.draw(0..3, 0..1);
         }
 
         self.queue.submit([encoder.finish()]);

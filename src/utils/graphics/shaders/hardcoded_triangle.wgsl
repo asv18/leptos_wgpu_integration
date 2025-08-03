@@ -1,11 +1,3 @@
-struct OurStruct {
-    color: vec4f,
-    scale: vec2f,
-    offset: vec2f,
-};
-
-@group(0) @binding(0) var<uniform> ourStruct: OurStruct;
-
 @vertex fn vs_main(
     @builtin(vertex_index) vertexIndex : u32
 ) -> @builtin(position) vec4f {
@@ -15,9 +7,9 @@ struct OurStruct {
         vec2f( 0.5, -0.5)   // bottom right
     );
 
-    return vec4f(pos[vertexIndex] * ourStruct.scale + ourStruct.offset, 0.0, 1.0);
+    return vec4f(pos[vertexIndex], 0.0, 1.0);
 }
 
 @fragment fn fs_main() -> @location(0) vec4f {
-    return ourStruct.color;
+    return vec4f(1.0, 0.0, 0.0, 1.0);
 }
