@@ -60,7 +60,7 @@ impl<'a> State<'a> {
             a: 1.0,
         };
 
-        let shader = wgpu::include_wgsl!("./shaders/hardcoded_triangle.wgsl");
+        let shader = wgpu::include_wgsl!("./shaders/interstage.wgsl");
 
         // handle buffers
 
