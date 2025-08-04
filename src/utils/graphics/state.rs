@@ -2,6 +2,8 @@ use std::sync::Arc;
 use std::str::FromStr;
 use wgpu::util::DeviceExt;
 
+use crate::utils::graphics::types::buffers::{TriangleListItem, TriangleUniform};
+
 use super::types::keycode::KeyCode;
 use super::types::size::PhysicalSize;
 
@@ -10,6 +12,7 @@ pub struct State<'a> {
     config: wgpu::SurfaceConfiguration,
     is_surface_configured: bool,
     canvas: Arc<leptos::web_sys::HtmlCanvasElement>,
+    triangle_items: Vec<TriangleListItem>,
 
     // portion of render structure
     surface: wgpu::Surface<'a>,
@@ -60,7 +63,60 @@ impl<'a> State<'a> {
             a: 1.0,
         };
 
-        let shader = wgpu::include_wgsl!("./shaders/interstage.wgsl");
+        let shader = wgpu::include_wgsl!("./shaders/uniform.wgsl");
+
+        let aspect = canvas_size.width as f32 / canvas_size.height as f32; 
+
+        let mut triangle_items = Vec::new();
+
+        let mut offset = 0.01;
+
+        let triangle_bind_group_layout = device.create_bind_group_layout(
+            &wgpu::BindGroupLayoutDescriptor {
+                label: Some("Triangle bind group layout"),
+                entries: &[
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    },
+                ],
+            }
+        );
+
+        for _i in 0..10 {
+            let triangle_uniform = TriangleUniform::new([offset, 1.0 - offset, (offset + 0.5) % 1.0, 1.0], [0.5 / aspect, 0.5], [0.9 - offset, (-0.9 - offset) % 0.9]);
+
+            let triangle_uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("Triangle uniform"),
+                contents: bytemuck::cast_slice(&[triangle_uniform]),
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            });
+
+            let triangle_bind_group = device.create_bind_group(
+                &wgpu::BindGroupDescriptor {
+                    label: Some("Triangle bind group"),
+                    layout: &triangle_bind_group_layout,
+                    entries: &[
+                        wgpu::BindGroupEntry {
+                            binding: 0,
+                            resource: triangle_uniform_buffer.as_entire_binding(),
+                        },
+                    ],
+                }
+            );
+
+            let triangle_item = TriangleListItem::new(triangle_uniform, triangle_uniform_buffer, triangle_bind_group);
+
+            triangle_items.push(triangle_item);
+
+            offset = (offset + offset) % 1.0
+        }
 
         // handle buffers
 
@@ -69,11 +125,11 @@ impl<'a> State<'a> {
     shader, 
             &device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("Render Pipeline Layout"),
-                bind_group_layouts: &[],
+                bind_group_layouts: &[&triangle_bind_group_layout],
                 push_constant_ranges: &[],
             }),
             &device, 
-            &config
+            &config,
         );
 
         Ok(Self {
@@ -84,6 +140,9 @@ impl<'a> State<'a> {
             is_surface_configured: false,
             canvas,
             render_pipeline,
+            triangle_items,
+            // triangle_uniform_buffers,
+            // triangle_bind_groups,
             // challenge_render_pipeline,
             clear_color,
             // toggle: false,
@@ -228,7 +287,15 @@ impl<'a> State<'a> {
             });
 
             render_pass.set_pipeline(&self.render_pipeline);
-            render_pass.draw(0..3, 0..1);
+
+            for item in &self.triangle_items {
+                render_pass.set_bind_group(0, &item.bind_group, &[]);
+                render_pass.draw(0..3, 0..1);
+            }
+
+            // render_pass.set_bind_group(0, &self.triangle_bind_group, &[]);
+            
+            // render_pass.draw(0..3, 0..1);
         }
 
         self.queue.submit([encoder.finish()]);
