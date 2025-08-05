@@ -7,6 +7,7 @@ use leptos::wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
 use wasm_bindgen_futures::wasm_bindgen::prelude::Closure;
 
+use crate::utils::graphics::types::buffers::TriangleUniform;
 use crate::utils::helpers::callbacks::*;
 use crate::utils::graphics::state::State;
 

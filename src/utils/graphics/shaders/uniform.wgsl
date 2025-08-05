@@ -9,16 +9,16 @@ struct VertexStruct {
 };
 
 @group(0) @binding(0) var<uniform> shaderStruct: VertexShaderStruct; // our uniform variable; kind of like a global variable
-@group(0) @binding(1) var<storage, read> pos: array<Vertex>;
-
-struct VSOutput {
-    @builtin(position) position: vec4f,
-    @location(0) color: vec4f,
-}
 
 @vertex fn vs_main(
     @builtin(vertex_index) vertexIndex : u32
 ) -> @builtin(position) vec4f {
+    let pos = array(
+        vec2f( 0.0,  0.5),  // top center
+        vec2f(-0.5, -0.5),  // bottom left
+        vec2f( 0.5, -0.5)   // bottom right
+    );
+
     return vec4f(pos[vertexIndex] * shaderStruct.scale + shaderStruct.offset, 0.0, 1.0); // use the uniform instead of some hard coded stuff
 }
 
