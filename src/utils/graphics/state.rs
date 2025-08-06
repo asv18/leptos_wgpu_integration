@@ -87,11 +87,22 @@ impl<'a> State<'a> {
                         },
                         count: None,
                     },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Storage { read_only: true },
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    },
                 ],
             }
         );
 
         let mut triangle_uniforms = Vec::new();
+        let mut vertices = Vec::new();
 
         for _i in 0..10 {
             let triangle_uniform = TriangleUniform::new([offset, 1.0 - offset, (offset + 0.5) % 1.0, 1.0], [0.5 / aspect, 0.5], [0.9 - offset, (-0.9 - offset) % 0.9]);
@@ -100,6 +111,10 @@ impl<'a> State<'a> {
 
             triangle_uniforms.push(triangle_uniform);
 
+            let vertex = Vertex { position: [0.0, 0.0, 0.0] };
+
+            vertices.push(vertex);
+
             offset = (offset + offset) % 1.0
         }
 
@@ -107,6 +122,12 @@ impl<'a> State<'a> {
             label: Some("Triangle buffer"),
             contents: bytemuck::cast_slice(&triangle_uniforms),
             usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
+        });
+
+        let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Vertex buffer"),
+            contents: bytemuck::cast_slice(&vertices),
+            usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
         });
 
         let triangle_bind_group = device.create_bind_group(
@@ -118,15 +139,13 @@ impl<'a> State<'a> {
                         binding: 0,
                         resource: triangle_buffer.as_entire_binding(),
                     },
+                    wgpu::BindGroupEntry {
+                        binding: 1,
+                        resource: vertex_buffer.as_entire_binding(),
+                    }
                 ],
             }
         );
-
-        let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Vertex buffer"),
-            contents: bytemuck::cast_slice(&triangle_uniforms),
-            usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
-        });
 
         // handle buffers
 
