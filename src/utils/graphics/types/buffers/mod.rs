@@ -1,37 +1,17 @@
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct TriangleUniform {
-    color: [f32; 4],
-    scale: [f32; 2],
-    offset: [f32; 2],
+    pub color: [f32; 4],
+    // scale: [f32; 2],
+    // offset: [f32; 2],
 }
 
 impl TriangleUniform {
-    pub fn new(color: [f32; 4], scale: [f32; 2], offset: [f32; 2]) -> Self {
+    pub fn new(color: [f32; 4] /*, scale: [f32; 2], offset: [f32; 2]*/) -> Self {
         Self {
             color,
-            scale,
-            offset,
-        }
-    }
-}
-
-pub struct TriangleListItem {
-    uniform: TriangleUniform,
-    uniform_buffer: wgpu::Buffer,
-    bind_group: wgpu::BindGroup,
-}
-
-impl TriangleListItem {
-    pub fn new(
-        uniform: TriangleUniform,
-        uniform_buffer: wgpu::Buffer,
-        bind_group: wgpu::BindGroup,
-    ) -> Self {
-        Self {
-            uniform,
-            uniform_buffer,
-            bind_group,
+            // scale,
+            // offset,
         }
     }
 }
@@ -39,7 +19,7 @@ impl TriangleListItem {
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Vertex {
-    pub position: [f32; 3],
+    pub position: [f32; 2],
 }
 
 impl Vertex {

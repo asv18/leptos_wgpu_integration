@@ -2,7 +2,7 @@ use std::sync::Arc;
 use std::str::FromStr;
 use wgpu::util::DeviceExt;
 
-use crate::utils::graphics::types::buffers::{TriangleListItem, TriangleUniform, Vertex};
+use crate::utils::graphics::types::buffers::{TriangleUniform, Vertex};
 
 use super::types::keycode::KeyCode;
 use super::types::size::PhysicalSize;
@@ -14,10 +14,13 @@ pub struct State<'a> {
     canvas: Arc<leptos::web_sys::HtmlCanvasElement>,
     // triangle_items: Vec<TriangleListItem>,
     triangle_buffer: wgpu::Buffer,
-    triangle_uniforms: Vec<TriangleUniform>,
-    triangle_bind_group: wgpu::BindGroup,
+    // triangle_uniforms: Vec<TriangleUniform>,
+    bind_group: wgpu::BindGroup,
     vertex_buffer: wgpu::Buffer,
+    vertices: Vec<Vertex>,
 
+    index_buffer: wgpu::Buffer,
+    indices: Vec<u16>,
     // portion of render structure
     surface: wgpu::Surface<'a>,
     render_pipeline: wgpu::RenderPipeline,
@@ -67,94 +70,112 @@ impl<'a> State<'a> {
             a: 1.0,
         };
 
-        let shader = wgpu::include_wgsl!("./shaders/storage.wgsl");
+        let shader = wgpu::include_wgsl!("./shaders/vertex_index_buffer.wgsl");
 
-        let aspect = canvas_size.width as f32 / canvas_size.height as f32; 
+        let (vertices, indices) = create_circle_vertices(0.5, 24, 0.3, 0.0, std::f32::consts::PI * 2.0);
 
-        let mut offset = 0.01;
+        let triangle_uniform = TriangleUniform::new([0.0, 1.0, 0.0, 1.0]);
 
-        let triangle_bind_group_layout = device.create_bind_group_layout(
+        // handle buffers
+        let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Vertex buffer"),
+            contents: bytemuck::cast_slice(&vertices),
+            usage: wgpu::BufferUsages::VERTEX,
+        });
+
+        let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Index buffer"),
+            contents: bytemuck::cast_slice(&indices),
+            usage: wgpu::BufferUsages::INDEX,
+        });
+
+        let bind_group_layout = device.create_bind_group_layout(
             &wgpu::BindGroupLayoutDescriptor {
-                label: Some("Triangle bind group layout"),
+                label: Some("Bind group layout"),
                 entries: &[
                     wgpu::BindGroupLayoutEntry {
                         binding: 0,
                         visibility: wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
                         ty: wgpu::BindingType::Buffer {
-                            ty: wgpu::BufferBindingType::Storage { read_only: true },
-                            has_dynamic_offset: false,
-                            min_binding_size: None,
-                        },
-                        count: None,
-                    },
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 1,
-                        visibility: wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
-                        ty: wgpu::BindingType::Buffer {
-                            ty: wgpu::BufferBindingType::Storage { read_only: true },
+                            ty: wgpu::BufferBindingType::Uniform,
                             has_dynamic_offset: false,
                             min_binding_size: None,
                         },
                         count: None,
                     },
                 ],
-            }
+            },
         );
 
-        let mut triangle_uniforms = Vec::new();
-        let mut vertices = Vec::new();
-
-        for _i in 0..10 {
-            let triangle_uniform = TriangleUniform::new([offset, 1.0 - offset, (offset + 0.5) % 1.0, 1.0], [0.5 / aspect, 0.5], [0.9 - offset, (-0.9 - offset) % 0.9]);
-
-            // triangle_items.push(triangle_item);
-
-            triangle_uniforms.push(triangle_uniform);
-
-            let vertex = Vertex { position: [0.0, 0.0, 0.0] };
-
-            vertices.push(vertex);
-
-            offset = (offset + offset) % 1.0
-        }
-
         let triangle_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Triangle buffer"),
-            contents: bytemuck::cast_slice(&triangle_uniforms),
-            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
+            label: Some("Buffer"),
+            contents: bytemuck::cast_slice(&triangle_uniform.color),
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
 
-        let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Vertex buffer"),
-            contents: bytemuck::cast_slice(&vertices),
-            usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
-        });
-
-        let triangle_bind_group = device.create_bind_group(
+        let bind_group = device.create_bind_group(
             &wgpu::BindGroupDescriptor {
-                label: Some("Triangle bind group"),
-                layout: &triangle_bind_group_layout,
+                label: Some("Bind group"),
+                layout: &bind_group_layout,
                 entries: &[
                     wgpu::BindGroupEntry {
                         binding: 0,
                         resource: triangle_buffer.as_entire_binding(),
                     },
-                    wgpu::BindGroupEntry {
-                        binding: 1,
-                        resource: vertex_buffer.as_entire_binding(),
-                    }
                 ],
             }
         );
 
-        // handle buffers
+        // let aspect = canvas_size.width as f32 / canvas_size.height as f32; 
+
+        // let mut offset = 0.01;
+
+        // let mut triangle_uniforms = Vec::new();
+        // let mut vertices = Vec::new(); // need to update vertex and uniform code soon
+
+        // for _i in 0..10 {
+        //     let triangle_uniform = TriangleUniform::new([offset, 1.0 - offset, (offset + 0.5) % 1.0, 1.0], [0.5 / aspect, 0.5], [0.9 - offset, (-0.9 - offset) % 0.9]);
+
+        //     // triangle_items.push(triangle_item);
+
+        //     triangle_uniforms.push(triangle_uniform);
+
+        //     let vertex = Vertex { position: [0.5, -0.5] };
+
+        //     vertices.push(vertex);
+
+        //     offset = (offset + offset) % 1.0
+        // }
+
+        // let triangle_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        //     label: Some("Triangle buffer"),
+        //     contents: bytemuck::cast_slice(&triangle_uniforms),
+        //     usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
+        // });
+
+        // let triangle_bind_group = device.create_bind_group(
+            // &wgpu::BindGroupDescriptor {
+            //     label: Some("Triangle bind group"),
+            //     layout: &triangle_bind_group_layout,
+            //     entries: &[
+            //         wgpu::BindGroupEntry {
+            //             binding: 0,
+            //             resource: triangle_buffer.as_entire_binding(),
+            //         },
+            //         wgpu::BindGroupEntry {
+            //             binding: 1,
+            //             resource: vertex_buffer.as_entire_binding(),
+            //         },
+            //     ],
+            // }
+        // );
 
         // handle rendering
         let render_pipeline = Self::generate_render_pipeline(
     shader, 
             &device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("Render Pipeline Layout"),
-                bind_group_layouts: &[&triangle_bind_group_layout],
+                bind_group_layouts: &[&bind_group_layout],
                 push_constant_ranges: &[],
             }),
             &device, 
@@ -171,9 +192,15 @@ impl<'a> State<'a> {
             canvas,
             render_pipeline,
             triangle_buffer,
-            triangle_uniforms,
-            triangle_bind_group,
+            // triangle_uniforms,
+            // triangle_bind_group,
+            bind_group,
             vertex_buffer,
+            vertices,
+
+            index_buffer,
+            indices,
+            // vertices,
             // triangle_uniform_buffers,
             // triangle_bind_groups,
             // challenge_render_pipeline,
@@ -326,12 +353,15 @@ impl<'a> State<'a> {
             //     render_pass.draw(0..3, 0..1);
             // }
 
-            self.queue.write_buffer(&self.triangle_buffer, 0, bytemuck::cast_slice(&self.triangle_uniforms));
+            // self.queue.write_buffer(&self.triangle_buffer, 0, bytemuck::cast_slice(&self.triangle_uniforms));
 
-            render_pass.set_bind_group(0, &self.triangle_bind_group, &[]);
+            // render_pass.set_bind_group(0, &self.triangle_bind_group, &[]);
+            render_pass.set_bind_group(0, &self.bind_group, &[]);
             render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-            
-            render_pass.draw(0..3, 0..100);
+            render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
+            render_pass.draw_indexed(0..self.indices.len() as u32, 0, 0..1);
+
+            // render_pass.draw(0..3, 0..self.triangle_uniforms.len() as u32);
         }
 
         self.queue.submit([encoder.finish()]);
@@ -351,3 +381,66 @@ impl<'a> State<'a> {
 
 //     (vertex_data, num_vertices)
 // }
+
+fn create_circle_vertices(
+    radius: f32,
+    num_subdivisions: u16,
+    inner_radius: f32,
+    start_angle: f32,
+    end_angle: f32,
+) -> (Vec<Vertex>, Vec<u16>) {
+    // 2 triangles per subdivision, 3 verts per tri, 2 values (xy) each.
+    // let num_vertices = num_subdivisions * 3 * 2;
+    let mut indices = Vec::with_capacity((num_subdivisions * 6) as usize);
+    let mut vertex_data = Vec::with_capacity((num_subdivisions * 2 * 3 * 2) as usize);
+
+    // 2 vertices per subdivision
+    //
+    // 0--1 4
+    // | / /|
+    // |/ / |
+    // 2 3--5
+    for i in 0..num_subdivisions {
+        let base = i * 6;
+
+        let angle1 = start_angle + (i as f32 + 0.0) * (end_angle - start_angle) / num_subdivisions as f32;
+        let angle2 = start_angle + (i as f32 + 1.0) * (end_angle - start_angle) / num_subdivisions as f32;
+
+        let c1 = angle1.cos();
+        let s1 = angle1.sin();
+        let c2 = angle2.cos();
+        let s2 = angle2.sin();
+
+        // first triangle
+        vertex_data.push(Vertex {
+            position: [c1 * radius, s1 * radius],
+        });
+        vertex_data.push(Vertex {
+            position: [c2 * radius, s2 * radius],
+        });
+        vertex_data.push(Vertex {
+            position: [c1 * inner_radius, s1 * inner_radius],
+        });
+        
+        indices.push(base + 0);
+        indices.push(base + 1);
+        indices.push(base + 2);
+
+        // second triangle
+        vertex_data.push(Vertex {
+            position: [c1 * inner_radius, s1 * inner_radius],
+        });
+        vertex_data.push(Vertex {
+            position: [c2 * radius, s2 * radius],
+        });
+        vertex_data.push(Vertex {
+            position: [c2 * inner_radius, s2 * inner_radius],
+        });
+        
+        indices.push(base + 3);
+        indices.push(base + 4);
+        indices.push(base + 5);
+    }
+
+    (vertex_data, indices)
+}
