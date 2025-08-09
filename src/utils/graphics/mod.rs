@@ -75,7 +75,7 @@ pub fn create_texel_F() -> (Vec<u8>, u32, u32) {
     let y = [255, 255, 0, 255]; // yellow
     let b = [0, 0, 255, 255]; // Blue
 
-
+    // texture is flipped, so we need to flip it from the source
     let texture_data = [
         r, r, r, r, r,
         r, y, r, r, r,
