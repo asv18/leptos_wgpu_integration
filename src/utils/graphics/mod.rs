@@ -67,3 +67,24 @@ pub fn create_circle_vertices(
 
     (vertex_data, indices)
 }
+
+#[rustfmt::skip]
+#[allow(non_snake_case)]
+pub fn create_texel_F() -> (Vec<u8>, u32, u32) {
+    let r = [255, 0, 0, 255]; // Red
+    let y = [255, 255, 0, 255]; // yellow
+    let b = [0, 0, 255, 255]; // Blue
+
+
+    let texture_data = [
+        r, r, r, r, r,
+        r, y, r, r, r,
+        r, y, r, r, r,
+        r, y, y, r, r,
+        r, y, r, r, r,
+        r, y, y, y, r,
+        b, r, r, r, r,
+    ];
+
+    (texture_data.iter().flatten().cloned().collect(), 5, 7)
+}

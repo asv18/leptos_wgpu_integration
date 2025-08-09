@@ -2,7 +2,7 @@ use std::sync::Arc;
 use std::str::FromStr;
 use wgpu::util::DeviceExt;
 
-use crate::utils::graphics::create_circle_vertices;
+use crate::utils::graphics::{create_circle_vertices, create_texel_F};
 use crate::utils::graphics::types::buffers::{TriangleUniform, Vertex};
 
 use super::types::keycode::KeyCode;
@@ -14,17 +14,10 @@ pub struct State<'a> {
     is_surface_configured: bool,
     canvas: Arc<leptos::web_sys::HtmlCanvasElement>,
     
-    // portion for buffers
-    triangle_buffer: wgpu::Buffer,
-    triangle_uniforms: Vec<TriangleUniform>,
+    // portion for bind groups and textures
     bind_group: wgpu::BindGroup,
-    vertex_buffer: wgpu::Buffer,
-    vertices: Vec<Vertex>,
+    texture: super::types::texture::Texture,
 
-    index_buffer: wgpu::Buffer,
-    indices: Vec<u16>,
-
-    num_instances: u32,
     // portion of render structure
     surface: wgpu::Surface<'a>,
     render_pipeline: wgpu::RenderPipeline,
@@ -74,44 +67,7 @@ impl<'a> State<'a> {
             a: 1.0,
         };
 
-        let shader = wgpu::include_wgsl!("./shaders/vertex_index_buffer.wgsl");
-
-        let (vertices, indices) = create_circle_vertices(0.5, 24, 0.3, 0.0, std::f32::consts::PI * 2.0);
-
-        let mut triangle_uniforms = Vec::new();
-        
-        use rand::Rng;
-
-        let aspect = canvas_size.width as f32 / canvas_size.height as f32;
-        let mut rng = rand::thread_rng();
-
-        let num_instances = 100;
-
-        for _i in 0..num_instances {
-            let scale = rng.gen_range(0.2..0.5) / aspect;
-            let triangle_uniform = TriangleUniform::new([rng.gen_range(0.0..=1.0), rng.gen_range(0.0..=1.0), rng.gen_range(0.0..=1.0), 1.0], [scale, scale], [rng.gen_range(-0.9..=0.9), rng.gen_range(-0.9..=0.9)]);
-
-            triangle_uniforms.push(triangle_uniform);
-        }
-
-        // handle buffers
-        let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Vertex buffer"),
-            contents: bytemuck::cast_slice(&vertices),
-            usage: wgpu::BufferUsages::VERTEX,
-        });
-
-        let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Index buffer"),
-            contents: bytemuck::cast_slice(&indices),
-            usage: wgpu::BufferUsages::INDEX,
-        });
-
-        let triangle_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Buffer"),
-            contents: bytemuck::cast_slice(&triangle_uniforms),
-            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
-        });
+        let shader = wgpu::include_wgsl!("./shaders/texture.wgsl");
 
         let bind_group_layout = device.create_bind_group_layout(
             &wgpu::BindGroupLayoutDescriptor {
@@ -119,17 +75,24 @@ impl<'a> State<'a> {
                 entries: &[
                     wgpu::BindGroupLayoutEntry {
                         binding: 0,
-                        visibility: wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
-                        ty: wgpu::BindingType::Buffer {
-                            ty: wgpu::BufferBindingType::Storage { read_only: true },
-                            has_dynamic_offset: false,
-                            min_binding_size: None,
-                        },
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Texture { sample_type: wgpu::TextureSampleType::Float { filterable: true, }, view_dimension: wgpu::TextureViewDimension::D2, multisampled: false, },
                         count: None,
                     },
                 ],
             },
         );
+
+        
+        let (texture_data, texture_width, texture_height) = create_texel_F();
+
+        let texture = super::types::texture::Texture::new(&queue, &device, &texture_data, texture_width, texture_height);
 
         let bind_group = device.create_bind_group(
             &wgpu::BindGroupDescriptor {
@@ -138,7 +101,11 @@ impl<'a> State<'a> {
                 entries: &[
                     wgpu::BindGroupEntry {
                         binding: 0,
-                        resource: triangle_buffer.as_entire_binding(),
+                        resource: wgpu::BindingResource::Sampler(&texture.sampler)
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 1,
+                        resource: wgpu::BindingResource::TextureView(&texture.view)
                     },
                 ],
             }
@@ -156,7 +123,7 @@ impl<'a> State<'a> {
             }),
             &device, 
             &config,
-            vec![Vertex::desc()],
+            vec![],
         );
 
         Ok(Self {
@@ -167,17 +134,9 @@ impl<'a> State<'a> {
             is_surface_configured: false,
             canvas,
             render_pipeline,
-            triangle_buffer,
-            triangle_uniforms,
             // triangle_bind_group,
             bind_group,
-            vertex_buffer,
-            vertices,
-
-            index_buffer,
-            indices,
-
-            num_instances,
+            texture,
             // vertices,
             // triangle_uniform_buffers,
             // triangle_bind_groups,
@@ -335,10 +294,7 @@ impl<'a> State<'a> {
 
             // render_pass.set_bind_group(0, &self.triangle_bind_group, &[]);
             render_pass.set_bind_group(0, &self.bind_group, &[]);
-
-            render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-            render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
-            render_pass.draw_indexed(0..self.indices.len() as u32, 0, 0..self.num_instances);
+            render_pass.draw(0..6, 0..1);
 
             // render_pass.draw(0..3, 0..self.triangle_uniforms.len() as u32);
         }
