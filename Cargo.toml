@@ -9,17 +9,17 @@ authors = [
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-leptos = { version = "0.7", features = ["csr"] }
-leptos_meta = { version = "0.7" }
-leptos_router = { version = "0.7" }
+leptos = { version = "0.8.6", features = ["csr"] }
+leptos_meta = { version = "0.8.5" }
+leptos_router = { version = "0.8.5" }
 console_log = "1"
 log = "0.4"
 console_error_panic_hook = "0.1"
 wasm-bindgen-futures = "0.4.50"
-wgpu = { version = "25.0.2", features = ["webgl", "webgpu"] }
+wgpu = { version = "26.0.1", features = ["webgl", "webgpu"] }
 anyhow = "1.0.98"
 strum = "0.27.1"
-strum_macros = "0.27.1"
+strum_macros = "0.27.2"
 bytemuck = { version = "1.23.1", features = ["derive"] }
 cgmath = "0.18.0"
 rand = { version = "0.8", features = ["std"] }

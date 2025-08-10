@@ -1,13 +1,14 @@
 use std::sync::Arc;
 use std::str::FromStr;
-use wgpu::util::DeviceExt;
+// use wgpu::util::DeviceExt;
 
-use crate::utils::graphics::{create_circle_vertices, create_texel_F};
-use crate::utils::graphics::types::buffers::{TriangleUniform, Vertex};
+use crate::utils::graphics::{/* create_circle_vertices, */ create_texel_F};
+// use crate::utils::graphics::types::buffers::{TriangleUniform, Vertex};
 
 use super::types::keycode::KeyCode;
 use super::types::size::PhysicalSize;
 
+#[allow(unused)]
 pub struct State<'a> {
     // portion of config structure
     config: wgpu::SurfaceConfiguration,
@@ -277,6 +278,7 @@ impl<'a> State<'a> {
                         load: wgpu::LoadOp::Clear(self.clear_color),
                         store: wgpu::StoreOp::Store,
                     },
+                    depth_slice: None,
                 })],
                 depth_stencil_attachment: None,
                 occlusion_query_set: None,

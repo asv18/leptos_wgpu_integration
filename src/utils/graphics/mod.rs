@@ -3,6 +3,7 @@ use crate::utils::graphics::types::buffers::Vertex;
 pub mod state;
 pub mod types;
 
+#[allow(unused)]
 pub fn create_circle_vertices(
     radius: f32,
     num_subdivisions: u16,

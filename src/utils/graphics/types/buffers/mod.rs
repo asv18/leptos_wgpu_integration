@@ -1,11 +1,13 @@
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
+#[allow(unused)]
 pub struct TriangleUniform {
     pub color: [f32; 4],
     scale: [f32; 2],
     offset: [f32; 2],
 }
 
+#[allow(unused)]
 impl TriangleUniform {
     pub fn new(color: [f32; 4], scale: [f32; 2], offset: [f32; 2]) -> Self {
         Self {
@@ -22,6 +24,7 @@ pub struct Vertex {
     pub position: [f32; 2],
 }
 
+#[allow(unused)]
 impl Vertex {
     const ATTRIBUTES: [wgpu::VertexAttribute; 1] = wgpu::vertex_attr_array![0 => Float32x2];
 

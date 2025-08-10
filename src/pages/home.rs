@@ -25,7 +25,6 @@ pub fn Home() -> impl IntoView {
                 </ul>
             }
         }>
-
             <div class="container">
                 <Window />
             </div>
