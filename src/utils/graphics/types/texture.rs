@@ -47,6 +47,9 @@ impl Texture {
 
         let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+            address_mode_u: wgpu::AddressMode::MirrorRepeat,
+            address_mode_v: wgpu::AddressMode::MirrorRepeat,
+            mag_filter: wgpu::FilterMode::Linear,
             ..Default::default()
         });
 

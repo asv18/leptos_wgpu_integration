@@ -53,4 +53,6 @@ button {
 
 canvas {
   background-color: black;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
 }
