@@ -6,8 +6,6 @@ use crate::components::window::Window;
 #[allow(non_snake_case)]
 #[component]
 pub fn Home() -> impl IntoView {
-    let (value, set_value) = signal(0i32);
-
     view! {
         <ErrorBoundary fallback=|errors| {
             view! {

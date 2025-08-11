@@ -1,3 +1,5 @@
+use crate::utils::helpers::js_functions::fetch_image_data;
+
 #[allow(unused)]
 pub struct Texture {
     pub texture: wgpu::Texture,
@@ -6,7 +8,7 @@ pub struct Texture {
 }
 
 impl Texture {
-    pub fn new(
+    pub fn new_from_texture_data(
         queue: &wgpu::Queue,
         device: &wgpu::Device,
         texture_data: &[u8],
@@ -61,11 +63,13 @@ impl Texture {
         }
     }
 
-    pub fn texture_data_from_image(node_ref: leptos::prelude::NodeRef<leptos::html::Img>) -> anyhow::Result<(Vec<u8>, u32, u32)> {
-        let window = leptos::web_sys::window().unwrap();
+    pub async fn new_from_image(url: &str, queue: &wgpu::Queue, device: &wgpu::Device) -> anyhow::Result<Self, leptos::wasm_bindgen::JsValue> {
+        let image_data = fetch_image_data(url).await?;
 
-        // window.
+        let texture_data = image_data.data().0;
+        let width = image_data.width();
+        let height = image_data.height();
 
-        Ok((vec![], 0, 0))
+        Ok(Self::new_from_texture_data(queue, device, &texture_data, width, height))
     }
 }

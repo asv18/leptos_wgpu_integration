@@ -5,8 +5,6 @@ use std::str::FromStr;
 // use crate::utils::graphics::{/* create_circle_vertices, */ create_texel_F};
 // use crate::utils::graphics::types::buffers::{TriangleUniform, Vertex};
 
-use crate::utils::graphics::create_texel_F;
-
 use super::types::keycode::KeyCode;
 use super::types::size::PhysicalSize;
 
@@ -30,7 +28,7 @@ pub struct State<'a> {
 }
 
 impl<'a> State<'a> {
-    pub async fn new(canvas: Arc<leptos::web_sys::HtmlCanvasElement>) -> anyhow::Result<State<'a>> {
+    pub async fn new(canvas: Arc<leptos::web_sys::HtmlCanvasElement>) -> anyhow::Result<State<'a>, leptos::wasm_bindgen::JsValue> {
         // handle initialization
         let canvas_size = PhysicalSize::<u32> {
             width: canvas.width(),
@@ -42,13 +40,14 @@ impl<'a> State<'a> {
             ..Default::default()
         });
 
-        let surface = instance.create_surface(wgpu::SurfaceTarget::Canvas(canvas.as_ref().clone()))?;
+        let surface = instance.create_surface(wgpu::SurfaceTarget::Canvas(canvas.as_ref().clone()))
+            .map_err(|e| leptos::wasm_bindgen::JsValue::from_str(&format!("{:?}", e)))?;
 
         let adapter = instance.request_adapter(&wgpu::RequestAdapterOptions {
             power_preference: wgpu::PowerPreference::default(),
             compatible_surface: Some(&surface),
             force_fallback_adapter: false,
-        }).await?;
+        }).await.map_err(|e| leptos::wasm_bindgen::JsValue::from_str(&format!("{:?}", e)))?;
 
         let (device, queue) = adapter.request_device(
         &wgpu::DeviceDescriptor {
@@ -58,7 +57,7 @@ impl<'a> State<'a> {
                 memory_hints: Default::default(),
                 trace: wgpu::Trace::Off,
             },
-        ).await?;
+        ).await.map_err(|e| leptos::wasm_bindgen::JsValue::from_str(&format!("{:?}", e)))?;
 
         let config = Self::generate_config(&adapter, &surface, &canvas_size);
 
@@ -93,10 +92,10 @@ impl<'a> State<'a> {
         );
 
         
-        let (texture_data, texture_width, texture_height) = create_texel_F();
+        // let (texture_data, texture_width, texture_height) = create_texel_F();
         // create_texel_F();
 
-        let texture = super::types::texture::Texture::new(&queue, &device, &texture_data, texture_width, texture_height);
+        let texture = super::types::texture::Texture::new_from_image("images/larry.webp", &queue, &device).await?;
 
         let bind_group = device.create_bind_group(
             &wgpu::BindGroupDescriptor {

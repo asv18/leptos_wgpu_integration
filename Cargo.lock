@@ -1269,6 +1269,7 @@ dependencies = [
  "strum",
  "strum_macros",
  "wasm-bindgen-futures",
+ "web-sys",
  "wgpu",
 ]
 
