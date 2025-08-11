@@ -1,3 +1,5 @@
+use std::error::Error;
+
 #[allow(unused)]
 pub struct Texture {
     pub texture: wgpu::Texture,
@@ -48,8 +50,8 @@ impl Texture {
 
         let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
-            address_mode_u: wgpu::AddressMode::MirrorRepeat,
-            address_mode_v: wgpu::AddressMode::MirrorRepeat,
+            address_mode_u: wgpu::AddressMode::Repeat,
+            address_mode_v: wgpu::AddressMode::Repeat,
             mag_filter: wgpu::FilterMode::Linear,
             ..Default::default()
         });
@@ -59,5 +61,19 @@ impl Texture {
             sampler,
             view,
         }
+    }
+
+    pub fn texture_data_from_image(path: &str) -> anyhow::Result<(Vec<u8>, u32, u32)> {
+        leptos::logging::log!("loaded function");
+
+        let image = photon_rs::native::open_image(path)?;
+
+        leptos::logging::log!("loaded image");
+
+        let rgba = image.get_raw_pixels();
+        let width = image.get_width();
+        let height = image.get_height();
+
+        Ok((rgba, width, height))
     }
 }

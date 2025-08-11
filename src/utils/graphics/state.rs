@@ -91,7 +91,8 @@ impl<'a> State<'a> {
         );
 
         
-        let (texture_data, texture_width, texture_height) = create_texel_F();
+        let (texture_data, texture_width, texture_height) = super::types::texture::Texture::texture_data_from_image("/images/larry.webp").unwrap();
+        // create_texel_F();
 
         let texture = super::types::texture::Texture::new(&queue, &device, &texture_data, texture_width, texture_height);
 

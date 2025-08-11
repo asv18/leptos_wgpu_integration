@@ -6,6 +6,8 @@ use crate::components::window::Window;
 #[allow(non_snake_case)]
 #[component]
 pub fn Home() -> impl IntoView {
+    let (value, set_value) = signal(0i32);
+
     view! {
         <ErrorBoundary fallback=|errors| {
             view! {
@@ -27,6 +29,16 @@ pub fn Home() -> impl IntoView {
         }>
             <div class="container">
                 <Window />
+
+            // <select
+            // on:change:target=move |ev| {
+            // set_value.set(ev.target().value().parse().unwrap());
+            // }
+            // prop:value=move || value.get().to_string()
+            // >
+            // <option value="0">"Repeat"</option>
+            // <option value="1">"Clamp-to-Edge"</option>
+            // </select>
             </div>
         </ErrorBoundary>
     }
