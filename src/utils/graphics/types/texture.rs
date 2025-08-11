@@ -1,5 +1,3 @@
-use std::error::Error;
-
 #[allow(unused)]
 pub struct Texture {
     pub texture: wgpu::Texture,
@@ -63,17 +61,11 @@ impl Texture {
         }
     }
 
-    pub fn texture_data_from_image(path: &str) -> anyhow::Result<(Vec<u8>, u32, u32)> {
-        leptos::logging::log!("loaded function");
+    pub fn texture_data_from_image(node_ref: leptos::prelude::NodeRef<leptos::html::Img>) -> anyhow::Result<(Vec<u8>, u32, u32)> {
+        let window = leptos::web_sys::window().unwrap();
 
-        let image = photon_rs::native::open_image(path)?;
+        // window.
 
-        leptos::logging::log!("loaded image");
-
-        let rgba = image.get_raw_pixels();
-        let width = image.get_width();
-        let height = image.get_height();
-
-        Ok((rgba, width, height))
+        Ok((vec![], 0, 0))
     }
 }

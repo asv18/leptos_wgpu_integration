@@ -2,8 +2,10 @@ use std::sync::Arc;
 use std::str::FromStr;
 // use wgpu::util::DeviceExt;
 
-use crate::utils::graphics::{/* create_circle_vertices, */ create_texel_F};
+// use crate::utils::graphics::{/* create_circle_vertices, */ create_texel_F};
 // use crate::utils::graphics::types::buffers::{TriangleUniform, Vertex};
+
+use crate::utils::graphics::create_texel_F;
 
 use super::types::keycode::KeyCode;
 use super::types::size::PhysicalSize;
@@ -91,7 +93,7 @@ impl<'a> State<'a> {
         );
 
         
-        let (texture_data, texture_width, texture_height) = super::types::texture::Texture::texture_data_from_image("/images/larry.webp").unwrap();
+        let (texture_data, texture_width, texture_height) = create_texel_F();
         // create_texel_F();
 
         let texture = super::types::texture::Texture::new(&queue, &device, &texture_data, texture_width, texture_height);
@@ -228,7 +230,8 @@ impl<'a> State<'a> {
     }
 
     // # TODO: handle key
-    pub fn handle_key(&mut self, event: leptos::web_sys::KeyboardEvent) -> Result<(), <KeyCode as ::core::str::FromStr>::Err> {
+    pub fn handle_key(&mut self, event: leptos::web_sys::KeyboardEvent) -> anyhow::Result<()> {
+        // <KeyCode as ::core::str::FromStr>::Err
         let code = KeyCode::from_str(&event.key().to_ascii_lowercase()).unwrap_or(KeyCode::Unknown);
 
         // if needed can uncomment to handle the same key being pressed over and over
@@ -254,7 +257,7 @@ impl<'a> State<'a> {
 
     }
 
-    pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
+    pub fn render(&mut self) -> anyhow::Result<()> {
         // self.canvas.as_ref().
 
         if !self.is_surface_configured {

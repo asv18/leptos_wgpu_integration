@@ -70,7 +70,7 @@ pub fn create_circle_vertices(
 }
 
 #[rustfmt::skip]
-#[allow(non_snake_case)]
+#[allow(non_snake_case, unused)]
 pub fn create_texel_F() -> (Vec<u8>, u32, u32) {
     let r = [255, 0, 0, 255]; // Red
     let y = [255, 255, 0, 255]; // yellow

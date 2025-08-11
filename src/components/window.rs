@@ -62,7 +62,6 @@ pub fn Window() -> impl IntoView {
             // mouse_moved_callback(&window, state.clone());
         });
     });
-
     view! {
         <canvas
             node_ref=canvas_node_ref
