@@ -1,9 +1,9 @@
 use std::sync::Arc;
 use std::str::FromStr;
-use wgpu::util::DeviceExt;
 
-use crate::utils::graphics::create_circle_vertices;
-use crate::utils::graphics::types::buffers::{TriangleUniform, Vertex};
+use crate::utils::graphics::create_F_buffer;
+use crate::utils::graphics::types::canvas_2d_buffer::Canvas2dBuffer;
+use crate::utils::graphics::types::vertex::Vertex;
 
 use super::types::keycode::KeyCode;
 use super::types::size::PhysicalSize;
@@ -14,17 +14,11 @@ pub struct State<'a> {
     is_surface_configured: bool,
     canvas: Arc<leptos::web_sys::HtmlCanvasElement>,
     
-    // portion for buffers
-    triangle_buffer: wgpu::Buffer,
-    triangle_uniforms: Vec<TriangleUniform>,
+    // portion for buffers and instancing
     bind_group: wgpu::BindGroup,
-    vertex_buffer: wgpu::Buffer,
-    vertices: Vec<Vertex>,
+    canvas_2d_buffer: Canvas2dBuffer,
 
-    index_buffer: wgpu::Buffer,
-    indices: Vec<u16>,
-
-    num_instances: u32,
+    // num_instances: u32,
     // portion of render structure
     surface: wgpu::Surface<'a>,
     render_pipeline: wgpu::RenderPipeline,
@@ -74,44 +68,9 @@ impl<'a> State<'a> {
             a: 1.0,
         };
 
-        let shader = wgpu::include_wgsl!("./shaders/vertex_index_buffer.wgsl");
+        let shader = wgpu::include_wgsl!("./shaders/translation_example.wgsl");
 
-        let (vertices, indices) = create_circle_vertices(0.5, 24, 0.3, 0.0, std::f32::consts::PI * 2.0);
-
-        let mut triangle_uniforms = Vec::new();
-        
-        use rand::Rng;
-
-        let aspect = canvas_size.width as f32 / canvas_size.height as f32;
-        let mut rng = rand::thread_rng();
-
-        let num_instances = 100;
-
-        for _i in 0..num_instances {
-            let scale = rng.gen_range(0.2..0.5) / aspect;
-            let triangle_uniform = TriangleUniform::new([rng.gen_range(0.0..=1.0), rng.gen_range(0.0..=1.0), rng.gen_range(0.0..=1.0), 1.0], [scale, scale], [rng.gen_range(-0.9..=0.9), rng.gen_range(-0.9..=0.9)]);
-
-            triangle_uniforms.push(triangle_uniform);
-        }
-
-        // handle buffers
-        let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Vertex buffer"),
-            contents: bytemuck::cast_slice(&vertices),
-            usage: wgpu::BufferUsages::VERTEX,
-        });
-
-        let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Index buffer"),
-            contents: bytemuck::cast_slice(&indices),
-            usage: wgpu::BufferUsages::INDEX,
-        });
-
-        let triangle_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Buffer"),
-            contents: bytemuck::cast_slice(&triangle_uniforms),
-            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
-        });
+        let canvas_2d_buffer = create_F_buffer(&device, &canvas_size);
 
         let bind_group_layout = device.create_bind_group_layout(
             &wgpu::BindGroupLayoutDescriptor {
@@ -121,7 +80,7 @@ impl<'a> State<'a> {
                         binding: 0,
                         visibility: wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
                         ty: wgpu::BindingType::Buffer {
-                            ty: wgpu::BufferBindingType::Storage { read_only: true },
+                            ty: wgpu::BufferBindingType::Uniform,
                             has_dynamic_offset: false,
                             min_binding_size: None,
                         },
@@ -138,7 +97,7 @@ impl<'a> State<'a> {
                 entries: &[
                     wgpu::BindGroupEntry {
                         binding: 0,
-                        resource: triangle_buffer.as_entire_binding(),
+                        resource: canvas_2d_buffer.triangle_buffer.as_entire_binding(),
                     },
                 ],
             }
@@ -165,23 +124,10 @@ impl<'a> State<'a> {
             queue,
             config,
             is_surface_configured: false,
+            bind_group,
+            canvas_2d_buffer,
             canvas,
             render_pipeline,
-            triangle_buffer,
-            triangle_uniforms,
-            // triangle_bind_group,
-            bind_group,
-            vertex_buffer,
-            vertices,
-
-            index_buffer,
-            indices,
-
-            num_instances,
-            // vertices,
-            // triangle_uniform_buffers,
-            // triangle_bind_groups,
-            // challenge_render_pipeline,
             clear_color,
             // toggle: false,
         })
@@ -318,6 +264,7 @@ impl<'a> State<'a> {
                         load: wgpu::LoadOp::Clear(self.clear_color),
                         store: wgpu::StoreOp::Store,
                     },
+                    depth_slice: None,
                 })],
                 depth_stencil_attachment: None,
                 occlusion_query_set: None,
@@ -336,9 +283,9 @@ impl<'a> State<'a> {
             // render_pass.set_bind_group(0, &self.triangle_bind_group, &[]);
             render_pass.set_bind_group(0, &self.bind_group, &[]);
 
-            render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-            render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
-            render_pass.draw_indexed(0..self.indices.len() as u32, 0, 0..self.num_instances);
+            render_pass.set_vertex_buffer(0, self.canvas_2d_buffer.vertex_buffer.slice(..));
+            render_pass.set_index_buffer(self.canvas_2d_buffer.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
+            render_pass.draw_indexed(0..self.canvas_2d_buffer.num_indices, 0, 0..1);
 
             // render_pass.draw(0..3, 0..self.triangle_uniforms.len() as u32);
         }

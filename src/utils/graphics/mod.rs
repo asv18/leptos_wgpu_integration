@@ -1,8 +1,14 @@
-use crate::utils::graphics::types::buffers::Vertex;
-
 pub mod state;
 pub mod types;
 
+use rand::Rng;
+use types::vertex::Vertex;
+
+use crate::utils::graphics::types::{
+    canvas_2d_buffer::Canvas2dBuffer, size::PhysicalSize, triangle_uniform::TriangleUniform,
+};
+
+#[allow(unused)]
 pub fn create_circle_vertices(
     radius: f32,
     num_subdivisions: u16,
@@ -66,4 +72,52 @@ pub fn create_circle_vertices(
     }
 
     (vertex_data, indices)
+}
+
+#[allow(non_snake_case)]
+#[rustfmt::skip]
+pub fn create_F_buffer(
+    device: &wgpu::Device,
+    canvas_size: &PhysicalSize<u32>,
+) -> Canvas2dBuffer {
+    let vertex_data = [
+        // left column
+        0., 0.,
+        30., 0.,
+        0., 150.,
+        30., 150.,
+    
+        // top rung
+        30., 0.,
+        100., 0.,
+        30., 30.,
+        100., 30.,
+    
+        // middle rung
+        30., 60.,
+        70., 60.,
+        30., 90.,
+        70., 90.,
+    ];
+
+    let index_data = [
+        0 as u16,  1,  2,    2,  1,  3,  // left column
+        4,  5,  6,    6,  5,  7,  // top run
+        8,  9, 10,   10,  9, 11,  // middle run
+    ];
+
+    let mut vertices = Vec::with_capacity(vertex_data.len() / 2);
+
+    for i in (0..vertex_data.len()).step_by(2) {
+        vertices.push(Vertex {
+            position: [vertex_data[i], vertex_data[i + 1]]
+        });
+    }
+
+    let indices = index_data.to_vec();
+
+    let mut rng = rand::thread_rng();
+    let triangle_uniform = TriangleUniform::new([rng.gen_range(0.0..=1.0), rng.gen_range(0.0..=1.0), rng.gen_range(0.0..=1.0), 1.0], [canvas_size.width as f32, canvas_size.height as f32]);
+    
+    Canvas2dBuffer::new(device, triangle_uniform, vertices, indices)
 }
