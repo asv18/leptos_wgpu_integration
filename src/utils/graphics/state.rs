@@ -13,9 +13,11 @@ pub struct State<'a> {
     config: wgpu::SurfaceConfiguration,
     is_surface_configured: bool,
     canvas: Arc<leptos::web_sys::HtmlCanvasElement>,
+    canvas_size: PhysicalSize<u32>,
     
     // portion for buffers and instancing
     bind_group: wgpu::BindGroup,
+    bind_group_layout: wgpu::BindGroupLayout,
     canvas_2d_buffer: Canvas2dBuffer,
 
     // num_instances: u32,
@@ -86,7 +88,7 @@ impl<'a> State<'a> {
             },
         );
 
-        let shader = wgpu::include_wgsl!("./shaders/translation_example.wgsl");
+        let shader = wgpu::include_wgsl!("./shaders/2d_math_examples.wgsl");
 
         let canvas_2d_buffer = create_F_buffer(&device, &canvas_size);
 
@@ -125,8 +127,10 @@ impl<'a> State<'a> {
             config,
             is_surface_configured: false,
             bind_group,
+            bind_group_layout,
             canvas_2d_buffer,
             canvas,
+            canvas_size,
             render_pipeline,
             clear_color,
             // toggle: false,
@@ -179,7 +183,7 @@ impl<'a> State<'a> {
                 topology: wgpu::PrimitiveTopology::TriangleList, // defining every three vertices as a triangle
                 strip_index_format: None,
                 front_face: wgpu::FrontFace::Ccw, // having our code read vertices CCW
-                cull_mode: Some(wgpu::Face::Back),
+                cull_mode: None,
                 // Setting this to anything other than Fill requires Features::NON_FILL_POLYGON_MODE
                 polygon_mode: wgpu::PolygonMode::Fill,
                 // Requires Features::DEPTH_CLIP_CONTROL
@@ -202,8 +206,10 @@ impl<'a> State<'a> {
     pub fn resize(&mut self, new_canvas: Arc<leptos::web_sys::HtmlCanvasElement>) {
         if new_canvas.width() > 0 && new_canvas.height() > 0 {
             self.canvas = new_canvas;
-            self.config.width = self.canvas.width();
-            self.config.height = self.canvas.height();
+
+            self.canvas_size = PhysicalSize { width: self.canvas.width(), height: self.canvas.height() };
+            self.config.width = self.canvas_size.width;
+            self.config.height = self.canvas_size.height;
 
             self.surface.configure(&self.device, &self.config);
             self.is_surface_configured = true;
@@ -212,9 +218,8 @@ impl<'a> State<'a> {
         }
     }
 
-    // # TODO: handle key
     pub fn handle_key(&mut self, event: leptos::web_sys::KeyboardEvent) -> Result<(), <KeyCode as ::core::str::FromStr>::Err> {
-        let code = KeyCode::from_str(&event.key().to_ascii_lowercase()).unwrap_or(KeyCode::Unknown);
+        let code = KeyCode::from_str(&event.key().to_ascii_lowercase()).unwrap_or(KeyCode::Unknown(event.key().to_ascii_lowercase()));
 
         // if needed can uncomment to handle the same key being pressed over and over
         // if event.repeat() {
@@ -225,6 +230,11 @@ impl<'a> State<'a> {
             // KeyCode::KeyCodeSpace => {
             //     self.toggle = !self.toggle;
             // },
+            KeyCode::KeyCodeArrowRight | KeyCode::KeyCodeArrowLeft | KeyCode::KeyCodeArrowDown | KeyCode::KeyCodeArrowUp | KeyCode::KeyCodeQ | KeyCode::KeyCodeR | KeyCode::KeyCodeW | KeyCode::KeyCodeS | KeyCode::KeyCodeA | KeyCode::KeyCodeD => {
+                let bind_group = self.canvas_2d_buffer.handle_key(code, &self.device, &self.bind_group_layout, &self.canvas_size);
+
+                self.bind_group = bind_group;
+            },
             _ => {
                 leptos::logging::log!("{:?}", code);
                 // self.camera_controller.process_events(&code, true);

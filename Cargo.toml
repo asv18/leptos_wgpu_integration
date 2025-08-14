@@ -17,9 +17,9 @@ log = "0.4"
 console_error_panic_hook = "0.1"
 wasm-bindgen-futures = "0.4.50"
 wgpu = { version = "26.0.1", features = ["webgl", "webgpu"] }
-anyhow = "1.0.98"
-strum = "0.27.1"
-strum_macros = "0.27.1"
+anyhow = "1.0.99"
+strum = "0.27.2"
+strum_macros = "0.27.2"
 bytemuck = { version = "1.23.1", features = ["derive"] }
 cgmath = "0.18.0"
 rand = { version = "0.8", features = ["std"] }

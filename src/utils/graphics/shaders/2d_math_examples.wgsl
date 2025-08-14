@@ -1,7 +1,9 @@
 struct Uniforms {
     color: vec4f,
     resolution: vec2f,
-    _pad: vec2f,
+    translation: vec2f,
+    rotation: vec2f,
+    scale: vec2f,
 };
 
 struct Vertex {
@@ -17,7 +19,16 @@ struct VSOutput {
 @vertex fn vs_main(vert: Vertex) -> VSOutput {
     var vsOut: VSOutput;
 
-    let position = vert.position;
+    let scaled_position = vert.position * uni.scale;
+
+    // rotate position
+    let rotatedPosition = vec2f(
+        scaled_position.x * uni.rotation.x - scaled_position.y * uni.rotation.y,
+        scaled_position.x * uni.rotation.y + scaled_position.y * uni.rotation.x
+    );
+
+    // add translation
+    let position = rotatedPosition + uni.translation;
 
     // convert the position from pixels to a 0.0 to 1.0 value
     let zeroToOne = position / uni.resolution;

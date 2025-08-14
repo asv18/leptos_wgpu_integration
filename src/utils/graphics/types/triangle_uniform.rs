@@ -3,7 +3,9 @@
 pub struct TriangleUniform {
     color: [f32; 4],
     resolution: [f32; 2],
-    _pad: [f32; 2],
+    pub translation: [f32; 2],
+    pub rotation: [f32; 2],
+    pub scale: [f32; 2],
 }
 
 impl TriangleUniform {
@@ -11,7 +13,9 @@ impl TriangleUniform {
         Self {
             color,
             resolution,
-            _pad: [0., 0.],
+            translation: [0., 0.],
+            rotation: [1., 0.],
+            scale: [1.0, 1.0],
         }
     }
 }
