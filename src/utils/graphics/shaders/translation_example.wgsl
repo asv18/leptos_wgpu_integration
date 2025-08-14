@@ -19,16 +19,19 @@ struct VSOutput {
 
     let position = vert.position;
 
-    // Normalize pixel coordinates to 0..1, origin top-left
-    let zeroToOne = vert.position / uni.resolution;
-
-    // Convert to clip space -1..1
-    let clipSpace = zeroToOne * 2.0 - vec2f(1.0, 1.0);
-
-    // Flip Y because origin is top-left in pixels but clip space is bottom-left
-    let flippedClipSpace = vec2f(clipSpace.x, 0.5 * clipSpace.y);
-
-    vsOut.position = vec4f(flippedClipSpace, 0.0, 1.0);
+    // convert the position from pixels to a 0.0 to 1.0 value
+    let zeroToOne = position / uni.resolution;
+    
+    // convert from 0 <-> 1 to 0 <-> 2
+    let zeroToTwo = zeroToOne * 2.0;
+    
+    // covert from 0 <-> 2 to -1 <-> +1 (clip space)
+    let flippedClipSpace = zeroToTwo - 1.0;
+    
+    // flip Y
+    let clipSpace = flippedClipSpace * vec2f(1, -1);
+    
+    vsOut.position = vec4f(clipSpace, 0.0, 1.0);
     return vsOut;
 }
 

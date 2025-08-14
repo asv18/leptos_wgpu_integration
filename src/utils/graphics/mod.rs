@@ -10,12 +10,14 @@ use crate::utils::graphics::types::{
 
 #[allow(unused)]
 pub fn create_circle_vertices(
+    device: &wgpu::Device,
+    canvas_size: &PhysicalSize<u32>,
     radius: f32,
     num_subdivisions: u16,
     inner_radius: f32,
     start_angle: f32,
     end_angle: f32,
-) -> (Vec<Vertex>, Vec<u16>) {
+) -> Canvas2dBuffer {
     // 2 triangles per subdivision, 3 verts per tri, 2 values (xy) each.
     // let num_vertices = num_subdivisions * 3 * 2;
     let mut indices = Vec::with_capacity((num_subdivisions * 6) as usize);
@@ -71,7 +73,20 @@ pub fn create_circle_vertices(
         indices.push(base + 5);
     }
 
-    (vertex_data, indices)
+    let mut rng = rand::thread_rng();
+    let triangle_uniform = TriangleUniform::new(
+        [
+            rng.gen_range(0.0..=1.0),
+            rng.gen_range(0.0..=1.0),
+            rng.gen_range(0.0..=1.0),
+            1.0,
+        ],
+        [canvas_size.width as f32, canvas_size.height as f32],
+    );
+
+    leptos::logging::log!("{:?}", vertex_data);
+
+    Canvas2dBuffer::new(device, triangle_uniform, vertex_data, indices)
 }
 
 #[allow(non_snake_case)]

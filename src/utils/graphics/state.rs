@@ -68,10 +68,6 @@ impl<'a> State<'a> {
             a: 1.0,
         };
 
-        let shader = wgpu::include_wgsl!("./shaders/translation_example.wgsl");
-
-        let canvas_2d_buffer = create_F_buffer(&device, &canvas_size);
-
         let bind_group_layout = device.create_bind_group_layout(
             &wgpu::BindGroupLayoutDescriptor {
                 label: Some("Bind group layout"),
@@ -89,6 +85,10 @@ impl<'a> State<'a> {
                 ],
             },
         );
+
+        let shader = wgpu::include_wgsl!("./shaders/translation_example.wgsl");
+
+        let canvas_2d_buffer = create_F_buffer(&device, &canvas_size);
 
         let bind_group = device.create_bind_group(
             &wgpu::BindGroupDescriptor {
