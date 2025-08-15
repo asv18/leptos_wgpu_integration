@@ -1,6 +1,6 @@
-use crate::utils::graphics::types::{
+use crate::utils::{graphics::types::{
     keycode::KeyCode, size::PhysicalSize, triangle_uniform::TriangleUniform, vertex::Vertex,
-};
+}, helpers::math_helpers::*};
 use wgpu::util::DeviceExt;
 
 #[allow(unused)]
@@ -71,12 +71,12 @@ impl Canvas2dBuffer {
         bind_group_layout: &wgpu::BindGroupLayout,
         canvas_size: &PhysicalSize<u32>,
     ) -> wgpu::BindGroup {
-        let mut new_translation = self.triangle_uniform.translation;
+        let mut new_translation = [self.triangle_uniform.matrix[0][2], self.triangle_uniform.matrix[1][2]];
 
         let mut new_rotation = self.rotation;
 
-        let mut new_scale_x = self.triangle_uniform.scale[0];
-        let mut new_scale_y = self.triangle_uniform.scale[1];
+        let mut new_scale_x = (self.triangle_uniform.matrix[0][0].powf(2.) + self.triangle_uniform.matrix[1][0].powf(2.)).sqrt();
+        let mut new_scale_y = (self.triangle_uniform.matrix[0][1].powf(2.) + self.triangle_uniform.matrix[1][1].powf(2.)).sqrt();
 
         match code {
             KeyCode::KeyCodeArrowRight => {
@@ -118,13 +118,12 @@ impl Canvas2dBuffer {
             _ => {}
         };
 
-        let new_coordinate_rotation = [new_rotation.cos(), new_rotation.sin()];
         self.rotation = new_rotation;
 
         self.update_triangle_uniform(
             device,
             new_translation,
-            new_coordinate_rotation,
+            new_rotation,
             [new_scale_x, new_scale_y],
         );
 
@@ -142,12 +141,16 @@ impl Canvas2dBuffer {
         &mut self,
         device: &wgpu::Device,
         new_translation: [f32; 2],
-        new_rotation: [f32; 2],
+        new_rotation: f32,
         new_scale: [f32; 2],
     ) {
-        self.triangle_uniform.translation = new_translation;
-        self.triangle_uniform.rotation = new_rotation;
-        self.triangle_uniform.scale = new_scale;
+        let translation_3x3 = translation_3x3(new_translation);
+        let rotation_3x3 = rotation_3x3(new_rotation);
+        let scale_3x3 = scale_3x3(new_scale);
+
+        let new_matrix = translation_3x3 * rotation_3x3 * scale_3x3;
+
+        self.triangle_uniform.matrix = new_matrix.into();
 
         // Create triangle uniform buffer
         let triangle_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {

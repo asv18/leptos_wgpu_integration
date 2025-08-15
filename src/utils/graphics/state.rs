@@ -88,7 +88,7 @@ impl<'a> State<'a> {
             },
         );
 
-        let shader = wgpu::include_wgsl!("./shaders/2d_math_examples.wgsl");
+        let shader = wgpu::include_wgsl!("./shaders/2d_matrix_math_examples.wgsl");
 
         let canvas_2d_buffer = create_F_buffer(&device, &canvas_size);
 
