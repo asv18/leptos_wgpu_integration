@@ -38,7 +38,7 @@ impl<'a> State<'a> {
         };
 
         let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor {
-            backends: wgpu::Backends::all(),
+            backends: wgpu::Backends::default(),
             ..Default::default()
         });
 

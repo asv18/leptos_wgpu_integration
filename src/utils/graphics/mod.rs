@@ -81,7 +81,6 @@ pub fn create_circle_vertices(
             rng.gen_range(0.0..=1.0),
             1.0,
         ],
-        [canvas_size.width as f32, canvas_size.height as f32],
     );
 
     leptos::logging::log!("{:?}", vertex_data);
@@ -132,7 +131,11 @@ pub fn create_F_buffer(
     let indices = index_data.to_vec();
 
     let mut rng = rand::thread_rng();
-    let triangle_uniform = TriangleUniform::new([rng.gen_range(0.0..=1.0), rng.gen_range(0.0..=1.0), rng.gen_range(0.0..=1.0), 1.0], [canvas_size.width as f32, canvas_size.height as f32]);
+    let triangle_uniform = TriangleUniform::new([rng.gen_range(0.0..=1.0), rng.gen_range(0.0..=1.0), rng.gen_range(0.0..=1.0), 1.0]);
     
-    Canvas2dBuffer::new(device, triangle_uniform, vertices, indices)
+    let mut buffer = Canvas2dBuffer::new(device, triangle_uniform, vertices, indices);
+
+    buffer.update_triangle_uniform(device, canvas_size);
+
+    buffer
 }

@@ -8,7 +8,10 @@ pub struct Canvas2dBuffer {
     // handle uniforms
     pub triangle_buffer: wgpu::Buffer,
     triangle_uniform: TriangleUniform,
+
     rotation: f32,
+    translation: [f32; 2],
+    scale: [f32; 2],
 
     // handle vertices
     pub vertex_buffer: wgpu::Buffer,
@@ -61,6 +64,8 @@ impl Canvas2dBuffer {
             indices,
             num_indices: num_indices as u32,
             rotation: 0.,
+            translation: [500.0, 200.0],
+            scale: [1.0, 1.0],
         }
     }
 
@@ -71,60 +76,51 @@ impl Canvas2dBuffer {
         bind_group_layout: &wgpu::BindGroupLayout,
         canvas_size: &PhysicalSize<u32>,
     ) -> wgpu::BindGroup {
-        let mut new_translation = [self.triangle_uniform.matrix[0][2], self.triangle_uniform.matrix[1][2]];
-
-        let mut new_rotation = self.rotation;
-
-        let mut new_scale_x = (self.triangle_uniform.matrix[0][0].powf(2.) + self.triangle_uniform.matrix[1][0].powf(2.)).sqrt();
-        let mut new_scale_y = (self.triangle_uniform.matrix[0][1].powf(2.) + self.triangle_uniform.matrix[1][1].powf(2.)).sqrt();
-
         match code {
             KeyCode::KeyCodeArrowRight => {
-                new_translation = [
-                    (new_translation[0] + 5.0).min(canvas_size.width as f32 - 100.0),
-                    new_translation[1],
+                self.translation = [
+                    (self.translation[0] + 5.0).min(canvas_size.width as f32 - 100.0),
+                    self.translation[1],
                 ];
             }
             KeyCode::KeyCodeArrowLeft => {
-                new_translation = [(new_translation[0] - 5.0).max(0.0), new_translation[1]];
+                self.translation = [(self.translation[0] - 5.0).max(0.0), self.translation[1]];
             }
             KeyCode::KeyCodeArrowUp => {
-                new_translation = [new_translation[0], (new_translation[1] - 5.0).max(0.0)];
+                self.translation = [self.translation[0], (self.translation[1] - 5.0).max(0.0)];
             }
             KeyCode::KeyCodeArrowDown => {
-                new_translation = [
-                    new_translation[0],
-                    (new_translation[1] + 5.0).min(canvas_size.height as f32 - 150.0),
+                self.translation = [
+                    self.translation[0],
+                    (self.translation[1] + 5.0).min(canvas_size.height as f32 - 150.0),
                 ];
             }
             KeyCode::KeyCodeR => {
-                new_rotation = (new_rotation - 0.1).max(-std::f32::consts::PI * 2.0);
+                self.rotation = (self.rotation - 0.1).max(-std::f32::consts::PI * 2.0);
             }
             KeyCode::KeyCodeQ => {
-                new_rotation = (new_rotation + 0.1).min(std::f32::consts::PI * 2.0);
-            }
-            KeyCode::KeyCodeS => {
-                new_scale_y = (new_scale_y + 0.2).min(5.0);
+                self.rotation = (self.rotation + 0.1).min(std::f32::consts::PI * 2.0);
             }
             KeyCode::KeyCodeW => {
-                new_scale_y = (new_scale_y - 0.2).max(-5.0);
+                self.scale[1] = (self.scale[1] + 0.2).min(5.0);
+            }
+            KeyCode::KeyCodeS => {
+                self.scale[1] = (self.scale[1] - 0.2).max(-5.0);
             }
             KeyCode::KeyCodeA => {
-                new_scale_x = (new_scale_x - 0.2).min(5.0);
+                self.scale[0] = (self.scale[0] - 0.2).max(-5.0);
             }
             KeyCode::KeyCodeD => {
-                new_scale_x = (new_scale_x + 0.2).max(-5.0);
+                self.scale[0] = (self.scale[0] + 0.2).min(5.0);
             }
             _ => {}
         };
 
-        self.rotation = new_rotation;
+        self.rotation = self.rotation;
 
         self.update_triangle_uniform(
             device,
-            new_translation,
-            new_rotation,
-            [new_scale_x, new_scale_y],
+            canvas_size,
         );
 
         device.create_bind_group(&wgpu::BindGroupDescriptor {
@@ -137,20 +133,22 @@ impl Canvas2dBuffer {
         })
     }
 
-    fn update_triangle_uniform(
+    pub fn update_triangle_uniform(
         &mut self,
         device: &wgpu::Device,
-        new_translation: [f32; 2],
-        new_rotation: f32,
-        new_scale: [f32; 2],
+        canvas_size: &PhysicalSize<u32>,
     ) {
-        let translation_3x3 = translation_3x3(new_translation);
-        let rotation_3x3 = rotation_3x3(new_rotation);
-        let scale_3x3 = scale_3x3(new_scale);
+        let projection_matrix = gen_projection_3x3(canvas_size);
 
-        let new_matrix = translation_3x3 * rotation_3x3 * scale_3x3;
+        let translation_matrix = gen_translation_3x3(self.translation);
+        let rotation_matrix = gen_rotation_3x3(self.rotation);
+        let scale_matrix = gen_scale_3x3(self.scale);
 
-        self.triangle_uniform.matrix = new_matrix.into();
+        let move_origin_matrix = gen_translation_3x3([-50., -75.]);
+
+        let new_matrix: cgmath::Matrix3<f32> = projection_matrix * translation_matrix * rotation_matrix * scale_matrix * move_origin_matrix;
+
+        self.triangle_uniform.pad_matrix(new_matrix);
 
         // Create triangle uniform buffer
         let triangle_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {

@@ -1,9 +1,7 @@
 struct Uniforms {
     color: vec4f,
-    resolution: vec2f,
-    _pad0: vec2f,
     matrix: mat3x3f,
-    _pad1: vec3f,
+    _pad1: vec4f,
 };
 
 struct Vertex {
@@ -19,20 +17,8 @@ struct VSOutput {
 @vertex fn vs_main(vert: Vertex) -> VSOutput {
     var vsOut: VSOutput;
 
-    let position = (uni.matrix * vec3f(vert.position, 1)).xy;
-
-    // convert the position from pixels to a 0.0 to 1.0 value
-    let zeroToOne = position / uni.resolution;
-    
-    // convert from 0 <-> 1 to 0 <-> 2
-    let zeroToTwo = zeroToOne * 2.0;
-    
-    // covert from 0 <-> 2 to -1 <-> +1 (clip space)
-    let flippedClipSpace = zeroToTwo - 1.0;
-    
-    // flip Y
-    let clipSpace = flippedClipSpace * vec2f(1, -1);
-    
+    let clipSpace = (uni.matrix * vec3f(vert.position, 1)).xy;
+ 
     vsOut.position = vec4f(clipSpace, 0.0, 1.0);
     return vsOut;
 }
