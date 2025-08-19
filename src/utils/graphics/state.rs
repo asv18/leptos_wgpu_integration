@@ -90,7 +90,7 @@ impl<'a> State<'a> {
 
         let shader = wgpu::include_wgsl!("./shaders/2d_matrix_math_examples.wgsl");
 
-        let canvas_2d_buffer = create_F_buffer(&device, &canvas_size);
+        let canvas_2d_buffer = create_F_buffer(&device, &queue, &canvas_size);
 
         let bind_group = device.create_bind_group(
             &wgpu::BindGroupDescriptor {
@@ -214,6 +214,8 @@ impl<'a> State<'a> {
             self.surface.configure(&self.device, &self.config);
             self.is_surface_configured = true;
 
+            self.canvas_2d_buffer.update_triangle_uniform(&self.queue, &self.canvas_size);
+
             // self.polygon_buffer.resize_polygon(&self.device, &self.canvas_size);
         }
     }
@@ -226,15 +228,12 @@ impl<'a> State<'a> {
         //     return Ok(());
         // }
 
+        self.bind_group = self.canvas_2d_buffer.handle_key(&code, &self.device, &self.queue, &self.bind_group_layout, &self.canvas_size);
+
         match code {
             // KeyCode::KeyCodeSpace => {
             //     self.toggle = !self.toggle;
             // },
-            KeyCode::KeyCodeArrowRight | KeyCode::KeyCodeArrowLeft | KeyCode::KeyCodeArrowDown | KeyCode::KeyCodeArrowUp | KeyCode::KeyCodeQ | KeyCode::KeyCodeR | KeyCode::KeyCodeW | KeyCode::KeyCodeS | KeyCode::KeyCodeA | KeyCode::KeyCodeD => {
-                let bind_group = self.canvas_2d_buffer.handle_key(code, &self.device, &self.bind_group_layout, &self.canvas_size);
-
-                self.bind_group = bind_group;
-            },
             _ => {
                 leptos::logging::log!("{:?}", code);
                 // self.camera_controller.process_events(&code, true);

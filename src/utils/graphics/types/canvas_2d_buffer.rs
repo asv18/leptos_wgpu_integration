@@ -9,9 +9,9 @@ pub struct Canvas2dBuffer {
     pub triangle_buffer: wgpu::Buffer,
     triangle_uniform: TriangleUniform,
 
-    rotation: f32,
-    translation: [f32; 2],
-    scale: [f32; 2],
+    rotation: [f32; 3],
+    translation: [f32; 3],
+    scale: [f32; 3],
 
     // handle vertices
     pub vertex_buffer: wgpu::Buffer,
@@ -63,63 +63,86 @@ impl Canvas2dBuffer {
             index_buffer,
             indices,
             num_indices: num_indices as u32,
-            rotation: 0.,
-            translation: [500.0, 200.0],
-            scale: [1.0, 1.0],
+            rotation: [0f32.to_radians(),0f32.to_radians(), 0f32.to_radians()],
+            translation: [0.0, 0.0, 0.0],
+            scale: [1.0, 1.0, 1.0],
         }
     }
 
     pub fn handle_key(
         &mut self,
-        code: KeyCode,
+        code: &KeyCode,
         device: &wgpu::Device,
+        queue: &wgpu::Queue,
         bind_group_layout: &wgpu::BindGroupLayout,
         canvas_size: &PhysicalSize<u32>,
     ) -> wgpu::BindGroup {
         match code {
+            // x-translation
             KeyCode::KeyCodeArrowRight => {
-                self.translation = [
-                    (self.translation[0] + 5.0).min(canvas_size.width as f32 - 100.0),
-                    self.translation[1],
-                ];
+                self.translation[0] = (self.translation[0] + 5.0).min(canvas_size.width as f32 - 100.0);
             }
             KeyCode::KeyCodeArrowLeft => {
-                self.translation = [(self.translation[0] - 5.0).max(0.0), self.translation[1]];
+                self.translation[0] = (self.translation[0] - 5.0).max(0.0);
             }
+            // y-translation
             KeyCode::KeyCodeArrowUp => {
-                self.translation = [self.translation[0], (self.translation[1] - 5.0).max(0.0)];
+                self.translation[1] = (self.translation[1] - 5.0).max(0.0);
             }
             KeyCode::KeyCodeArrowDown => {
-                self.translation = [
-                    self.translation[0],
-                    (self.translation[1] + 5.0).min(canvas_size.height as f32 - 150.0),
-                ];
+                self.translation[1] = (self.translation[1] + 5.0).min(canvas_size.height as f32 - 150.0);
             }
-            KeyCode::KeyCodeR => {
-                self.rotation = (self.rotation - 0.1).max(-std::f32::consts::PI * 2.0);
+            // TODO: z-translation
+            KeyCode::KeyCodeSquareBracketLeft => {
+                self.translation[2] = (self.translation[2] - 5.0).max(0.0);
+            }
+            KeyCode::KeyCodeSquareBracketRight => {
+                self.translation[2] = (self.translation[2] + 5.0).min(400.0);
+            }
+
+            // x-rotation
+            KeyCode::KeyCodeE => {
+                self.rotation[0] = (self.rotation[0] - 0.1).max(-std::f32::consts::PI * 2.0);
             }
             KeyCode::KeyCodeQ => {
-                self.rotation = (self.rotation + 0.1).min(std::f32::consts::PI * 2.0);
+                self.rotation[0] = (self.rotation[0] + 0.1).min(std::f32::consts::PI * 2.0);
             }
+            // y-rotation
+            KeyCode::KeyCode1 => {
+                self.rotation[1] = (self.rotation[1] - 0.1).max(-std::f32::consts::PI * 2.0);
+            }
+            KeyCode::KeyCode2 => {
+                self.rotation[1] = (self.rotation[1] + 0.1).min(std::f32::consts::PI * 2.0);
+            }
+            // z-rotation
+            KeyCode::KeyCodeZ => {
+                self.rotation[2] = (self.rotation[2] - 0.1).max(-std::f32::consts::PI * 2.0);
+            }
+            KeyCode::KeyCodeX => {
+                self.rotation[2] = (self.rotation[2] + 0.1).min(std::f32::consts::PI * 2.0);
+            }
+            // x-scaling
             KeyCode::KeyCodeW => {
                 self.scale[1] = (self.scale[1] + 0.2).min(5.0);
             }
             KeyCode::KeyCodeS => {
                 self.scale[1] = (self.scale[1] - 0.2).max(-5.0);
             }
+
+            // y-scaling
             KeyCode::KeyCodeA => {
                 self.scale[0] = (self.scale[0] - 0.2).max(-5.0);
             }
             KeyCode::KeyCodeD => {
                 self.scale[0] = (self.scale[0] + 0.2).min(5.0);
             }
+
+            // TODO: z-scaling
             _ => {}
         };
 
-        self.rotation = self.rotation;
-
         self.update_triangle_uniform(
-            device,
+            queue,
             canvas_size,
         );
 
@@ -135,29 +158,34 @@ impl Canvas2dBuffer {
 
     pub fn update_triangle_uniform(
         &mut self,
-        device: &wgpu::Device,
+        queue: &wgpu::Queue,
         canvas_size: &PhysicalSize<u32>,
     ) {
-        let projection_matrix = gen_projection_3x3(canvas_size);
+        // let projection_matrix = cgmath::ortho(
+        //     0.0,
+        //     canvas_size.width as f32,
+        //     canvas_size.height as f32,
+        //     0.0,
+        //     0.0,
+        //     400.,
+        // );
 
-        let translation_matrix = gen_translation_3x3(self.translation);
-        let rotation_matrix = gen_rotation_3x3(self.rotation);
-        let scale_matrix = gen_scale_3x3(self.scale);
+        let projection_matrix = gen_projection_4x4(canvas_size, 400.);
 
-        let move_origin_matrix = gen_translation_3x3([-50., -75.]);
+        let model =
+            cgmath::Matrix4::from_translation(self.translation.into()) *
+            cgmath::Matrix4::from_angle_x(cgmath::Rad(self.rotation[0])) *
+            cgmath::Matrix4::from_angle_y(cgmath::Rad(self.rotation[1])) *
+            cgmath::Matrix4::from_angle_z(cgmath::Rad(self.rotation[2])) *
+            gen_scale_4x4(self.scale);
 
-        let new_matrix: cgmath::Matrix3<f32> = projection_matrix * translation_matrix * rotation_matrix * scale_matrix * move_origin_matrix;
+        let mvp = projection_matrix * model;
 
-        self.triangle_uniform.pad_matrix(new_matrix);
+        self.triangle_uniform.matrix = mvp.into();
 
-        // Create triangle uniform buffer
-        let triangle_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Triangle Uniform Buffer"),
-            contents: bytemuck::cast_slice(&[self.triangle_uniform]),
-            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-        });
+        leptos::logging::log!("Model matrix: {model:?}\n\nProjection matrix: {projection_matrix:?}\n\nFinal matrix: {mvp:?}");
 
-        self.triangle_buffer = triangle_buffer;
+        queue.write_buffer(&self.triangle_buffer, 0, bytemuck::cast_slice(&[self.triangle_uniform]))
     }
 }
 

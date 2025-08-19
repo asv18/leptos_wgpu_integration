@@ -88,8 +88,15 @@ pub enum KeyCode {
     #[strum(serialize = "arrowright")]
     KeyCodeArrowRight,
 
+    // brackets
+    #[strum(serialize = "[")]
+    KeyCodeSquareBracketLeft,
+    #[strum(serialize = "]")]
+    KeyCodeSquareBracketRight,
+
     // misc.
     #[strum(serialize = " ")]
     KeyCodeSpace,
+
     Unknown(String),
 }
