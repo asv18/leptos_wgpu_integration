@@ -183,7 +183,7 @@ impl Canvas2dBuffer {
 
         self.triangle_uniform.matrix = mvp.into();
 
-        leptos::logging::log!("Model matrix: {model:?}\n\nProjection matrix: {projection_matrix:?}\n\nFinal matrix: {mvp:?}");
+        // leptos::logging::log!("Model matrix: {model:?}\n\nProjection matrix: {projection_matrix:?}\n\nFinal matrix: {mvp:?}\n\nFinal matrix in raw form: {:?}", self.triangle_uniform.matrix);
 
         queue.write_buffer(&self.triangle_buffer, 0, bytemuck::cast_slice(&[self.triangle_uniform]))
     }
