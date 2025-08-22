@@ -1,6 +1,9 @@
-use crate::utils::{graphics::types::{
-    keycode::KeyCode, size::PhysicalSize, triangle_uniform::TriangleUniform, vertex::Vertex,
-}, helpers::math_helpers::*};
+use crate::utils::{
+    graphics::types::{
+        keycode::KeyCode, size::PhysicalSize, triangle_uniform::TriangleUniform, vertex::Vertex,
+    },
+    helpers::math_helpers::*,
+};
 use wgpu::util::DeviceExt;
 
 #[allow(unused)]
@@ -63,7 +66,7 @@ impl Canvas2dBuffer {
             index_buffer,
             indices,
             num_indices: num_indices as u32,
-            rotation: [0f32.to_radians(),0f32.to_radians(), 0f32.to_radians()],
+            rotation: [0f32.to_radians(), 0f32.to_radians(), 0f32.to_radians()],
             translation: [0.0, 0.0, 0.0],
             scale: [1.0, 1.0, 1.0],
         }
@@ -80,7 +83,8 @@ impl Canvas2dBuffer {
         match code {
             // x-translation
             KeyCode::KeyCodeArrowRight => {
-                self.translation[0] = (self.translation[0] + 5.0).min(canvas_size.width as f32 - 100.0);
+                self.translation[0] =
+                    (self.translation[0] + 5.0).min(canvas_size.width as f32 - 100.0);
             }
             KeyCode::KeyCodeArrowLeft => {
                 self.translation[0] = (self.translation[0] - 5.0).max(0.0);
@@ -90,7 +94,8 @@ impl Canvas2dBuffer {
                 self.translation[1] = (self.translation[1] - 5.0).max(0.0);
             }
             KeyCode::KeyCodeArrowDown => {
-                self.translation[1] = (self.translation[1] + 5.0).min(canvas_size.height as f32 - 150.0);
+                self.translation[1] =
+                    (self.translation[1] + 5.0).min(canvas_size.height as f32 - 150.0);
             }
             // TODO: z-translation
             KeyCode::KeyCodeSquareBracketLeft => {
@@ -141,10 +146,7 @@ impl Canvas2dBuffer {
             _ => {}
         };
 
-        self.update_triangle_uniform(
-            queue,
-            canvas_size,
-        );
+        self.update_triangle_uniform(queue, canvas_size);
 
         device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("Bind group"),
@@ -172,12 +174,11 @@ impl Canvas2dBuffer {
 
         let projection_matrix = gen_projection_4x4(canvas_size, 400.);
 
-        let model =
-            cgmath::Matrix4::from_translation(self.translation.into()) *
-            cgmath::Matrix4::from_angle_x(cgmath::Rad(self.rotation[0])) *
-            cgmath::Matrix4::from_angle_y(cgmath::Rad(self.rotation[1])) *
-            cgmath::Matrix4::from_angle_z(cgmath::Rad(self.rotation[2])) *
-            gen_scale_4x4(self.scale);
+        let model = cgmath::Matrix4::from_translation(self.translation.into())
+            * cgmath::Matrix4::from_angle_x(cgmath::Rad(self.rotation[0]))
+            * cgmath::Matrix4::from_angle_y(cgmath::Rad(self.rotation[1]))
+            * cgmath::Matrix4::from_angle_z(cgmath::Rad(self.rotation[2]))
+            * gen_scale_4x4(self.scale);
 
         let mvp = projection_matrix * model;
 
@@ -185,7 +186,11 @@ impl Canvas2dBuffer {
 
         // leptos::logging::log!("Model matrix: {model:?}\n\nProjection matrix: {projection_matrix:?}\n\nFinal matrix: {mvp:?}\n\nFinal matrix in raw form: {:?}", self.triangle_uniform.matrix);
 
-        queue.write_buffer(&self.triangle_buffer, 0, bytemuck::cast_slice(&[self.triangle_uniform]))
+        queue.write_buffer(
+            &self.triangle_buffer,
+            0,
+            bytemuck::cast_slice(&[self.triangle_uniform]),
+        )
     }
 }
 
