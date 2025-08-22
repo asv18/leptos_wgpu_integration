@@ -5,7 +5,8 @@ use rand::Rng;
 use types::vertex::Vertex;
 
 use crate::utils::graphics::types::{
-    canvas_2d_buffer::Canvas2dBuffer, size::PhysicalSize, triangle_uniform::TriangleUniform,
+    buffers::canvas_2d_buffer::Canvas2dBuffer, size::PhysicalSize,
+    uniforms::triangle_uniform::TriangleUniform,
 };
 
 #[allow(non_snake_case)]

@@ -2,7 +2,7 @@ use std::sync::Arc;
 use std::str::FromStr;
 
 use crate::utils::graphics::create_F_buffer;
-use crate::utils::graphics::types::canvas_2d_buffer::Canvas2dBuffer;
+use crate::utils::graphics::types::buffers::canvas_2d_buffer::Canvas2dBuffer;
 use crate::utils::graphics::types::vertex::Vertex;
 
 use super::types::keycode::KeyCode;

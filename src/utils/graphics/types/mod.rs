@@ -1,5 +1,5 @@
-pub mod canvas_2d_buffer;
+pub mod buffers;
 pub mod keycode;
 pub mod size;
-pub mod triangle_uniform;
+pub mod uniforms;
 pub mod vertex;

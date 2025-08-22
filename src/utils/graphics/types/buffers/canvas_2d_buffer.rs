@@ -1,6 +1,7 @@
 use crate::utils::{
     graphics::types::{
-        keycode::KeyCode, size::PhysicalSize, triangle_uniform::TriangleUniform, vertex::Vertex,
+        keycode::KeyCode, size::PhysicalSize, uniforms::triangle_uniform::TriangleUniform,
+        vertex::Vertex,
     },
     helpers::math_helpers::*,
 };
