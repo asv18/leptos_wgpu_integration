@@ -5,17 +5,18 @@ use rand::Rng;
 use types::vertex::Vertex;
 
 use crate::utils::graphics::types::{
-    buffers::canvas_2d_buffer::Canvas2dBuffer, size::PhysicalSize,
+    buffers::canvas_2d_buffer::Canvas2dBuffer, camera::CameraControl, size::PhysicalSize,
     uniforms::triangle_uniform::TriangleUniform,
 };
 
 #[allow(non_snake_case)]
 #[rustfmt::skip]
-pub fn create_F_buffer(
+pub fn create_F_buffer<T: CameraControl>(
     device: &wgpu::Device,
     queue: &wgpu::Queue,
     canvas_size: &PhysicalSize<u32>,
-) -> Canvas2dBuffer {
+    camera: T,
+) -> Canvas2dBuffer<T> {
     let vertex_data = [
         // left column
         0, 0, 0,
@@ -55,9 +56,7 @@ pub fn create_F_buffer(
     let mut rng = rand::thread_rng();
     let triangle_uniform = TriangleUniform::new([rng.gen_range(0.0..=1.0), rng.gen_range(0.0..=1.0), rng.gen_range(0.0..=1.0), 1.0]);
     
-    let mut buffer = Canvas2dBuffer::new(device, triangle_uniform, vertices, indices);
-
-    buffer.update_triangle_uniform(queue, canvas_size);
+    let buffer = Canvas2dBuffer::new(device, triangle_uniform, vertices, indices, camera);
 
     buffer
 }

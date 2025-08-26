@@ -3,6 +3,7 @@ use std::str::FromStr;
 
 use crate::utils::graphics::create_F_buffer;
 use crate::utils::graphics::types::buffers::canvas_2d_buffer::Canvas2dBuffer;
+use crate::utils::graphics::types::camera::{CameraControl, OrthoGraphicCamera};
 use crate::utils::graphics::types::vertex::Vertex;
 
 use super::types::keycode::KeyCode;
@@ -18,7 +19,7 @@ pub struct State<'a> {
     // portion for buffers and instancing
     bind_group: wgpu::BindGroup,
     bind_group_layout: wgpu::BindGroupLayout,
-    canvas_2d_buffer: Canvas2dBuffer,
+    canvas_2d_buffer: Canvas2dBuffer<OrthoGraphicCamera>,
 
     // num_instances: u32,
     // portion of render structure
@@ -30,7 +31,7 @@ pub struct State<'a> {
 }
 
 impl<'a> State<'a> {
-    pub async fn new(canvas: Arc<leptos::web_sys::HtmlCanvasElement>) -> anyhow::Result<State<'a>> {
+    pub async fn new(canvas: Arc<leptos::web_sys::HtmlCanvasElement>) -> anyhow::Result<State<'a, T>> {
         // handle initialization
         let canvas_size = PhysicalSize::<u32> {
             width: canvas.width(),
@@ -90,7 +91,8 @@ impl<'a> State<'a> {
 
         let shader = wgpu::include_wgsl!("./shaders/2d_matrix_math_examples.wgsl");
 
-        let canvas_2d_buffer = create_F_buffer(&device, &queue, &canvas_size);
+        let camera = OrthoGraphicCamera::new(&canvas_size, 400);
+        let canvas_2d_buffer = create_F_buffer(&device, &queue, &canvas_size, camera);
 
         let bind_group = device.create_bind_group(
             &wgpu::BindGroupDescriptor {
@@ -228,7 +230,7 @@ impl<'a> State<'a> {
         //     return Ok(());
         // }
 
-        self.bind_group = self.canvas_2d_buffer.handle_key(&code, &self.device, &self.queue, &self.bind_group_layout, &self.canvas_size);
+        self.canvas_2d_buffer.camera.handle_key(&code);
 
         match code {
             // KeyCode::KeyCodeSpace => {
