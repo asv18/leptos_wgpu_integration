@@ -3,7 +3,7 @@ use std::str::FromStr;
 
 use crate::utils::graphics::create_F_buffer;
 use crate::utils::graphics::types::buffers::canvas_2d_buffer::Canvas2dBuffer;
-use crate::utils::graphics::types::camera::{CameraControl, OrthoGraphicCamera};
+use crate::utils::graphics::types::camera::OrthoGraphicCamera;
 use crate::utils::graphics::types::vertex::Vertex;
 
 use super::types::keycode::KeyCode;
@@ -18,7 +18,7 @@ pub struct State<'a> {
     
     // portion for buffers and instancing
     bind_group: wgpu::BindGroup,
-    bind_group_layout: wgpu::BindGroupLayout,
+    // bind_group_layout: wgpu::BindGroupLayout,
     canvas_2d_buffer: Canvas2dBuffer<OrthoGraphicCamera>,
 
     // num_instances: u32,
@@ -31,7 +31,7 @@ pub struct State<'a> {
 }
 
 impl<'a> State<'a> {
-    pub async fn new(canvas: Arc<leptos::web_sys::HtmlCanvasElement>) -> anyhow::Result<State<'a, T>> {
+    pub async fn new(canvas: Arc<leptos::web_sys::HtmlCanvasElement>) -> anyhow::Result<State<'a>> {
         // handle initialization
         let canvas_size = PhysicalSize::<u32> {
             width: canvas.width(),
@@ -85,6 +85,16 @@ impl<'a> State<'a> {
                         },
                         count: None,
                     },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: wgpu::ShaderStages::VERTEX,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    },
                 ],
             },
         );
@@ -92,7 +102,7 @@ impl<'a> State<'a> {
         let shader = wgpu::include_wgsl!("./shaders/2d_matrix_math_examples.wgsl");
 
         let camera = OrthoGraphicCamera::new(&canvas_size, 400);
-        let canvas_2d_buffer = create_F_buffer(&device, &queue, &canvas_size, camera);
+        let canvas_2d_buffer = create_F_buffer(&device, camera);
 
         let bind_group = device.create_bind_group(
             &wgpu::BindGroupDescriptor {
@@ -102,6 +112,10 @@ impl<'a> State<'a> {
                     wgpu::BindGroupEntry {
                         binding: 0,
                         resource: canvas_2d_buffer.triangle_buffer.as_entire_binding(),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 1,
+                        resource: canvas_2d_buffer.camera_buffer.as_entire_binding(),
                     },
                 ],
             }
@@ -129,7 +143,7 @@ impl<'a> State<'a> {
             config,
             is_surface_configured: false,
             bind_group,
-            bind_group_layout,
+            // bind_group_layout,
             canvas_2d_buffer,
             canvas,
             canvas_size,
@@ -216,8 +230,6 @@ impl<'a> State<'a> {
             self.surface.configure(&self.device, &self.config);
             self.is_surface_configured = true;
 
-            self.canvas_2d_buffer.update_triangle_uniform(&self.queue, &self.canvas_size);
-
             // self.polygon_buffer.resize_polygon(&self.device, &self.canvas_size);
         }
     }
@@ -230,7 +242,7 @@ impl<'a> State<'a> {
         //     return Ok(());
         // }
 
-        self.canvas_2d_buffer.camera.handle_key(&code);
+        self.canvas_2d_buffer.update_camera(&code, &self.device, &self.queue);
 
         match code {
             // KeyCode::KeyCodeSpace => {

@@ -5,7 +5,7 @@ use rand::Rng;
 use types::vertex::Vertex;
 
 use crate::utils::graphics::types::{
-    buffers::canvas_2d_buffer::Canvas2dBuffer, camera::CameraControl, size::PhysicalSize,
+    buffers::canvas_2d_buffer::Canvas2dBuffer, camera::CameraControl,
     uniforms::triangle_uniform::TriangleUniform,
 };
 
@@ -13,8 +13,6 @@ use crate::utils::graphics::types::{
 #[rustfmt::skip]
 pub fn create_F_buffer<T: CameraControl>(
     device: &wgpu::Device,
-    queue: &wgpu::Queue,
-    canvas_size: &PhysicalSize<u32>,
     camera: T,
 ) -> Canvas2dBuffer<T> {
     let vertex_data = [

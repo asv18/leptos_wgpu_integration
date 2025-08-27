@@ -52,7 +52,9 @@ impl CameraControl for OrthoGraphicCamera {
         let matrix = cgmath::Matrix4::<f32>::identity();
 
         match code {
-            _ => {}
+            _ => {
+                self.width -= 10;
+            }
         };
 
         CameraUniform::new(self.build_view_projection_matrix() * matrix)

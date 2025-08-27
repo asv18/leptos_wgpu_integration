@@ -84,7 +84,7 @@ impl<T: CameraControl> Canvas2dBuffer<T> {
         }
     }
 
-    fn update_camera(&mut self, code: &KeyCode, device: &wgpu::Device, queue: &wgpu::Queue) {
+    pub fn update_camera(&mut self, code: &KeyCode, device: &wgpu::Device, queue: &wgpu::Queue) {
         self.camera_uniform = self.camera.handle_key(code);
 
         self.camera_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -96,7 +96,7 @@ impl<T: CameraControl> Canvas2dBuffer<T> {
         queue.write_buffer(
             &self.camera_buffer,
             1,
-            bytemuck::cast_slice(&[self.triangle_uniform]),
+            bytemuck::cast_slice(&[self.camera_uniform]),
         )
     }
 }

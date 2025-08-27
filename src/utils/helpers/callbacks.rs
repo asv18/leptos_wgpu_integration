@@ -1,4 +1,4 @@
-use crate::utils::graphics::{state::State, types::camera::CameraControl};
+use crate::utils::graphics::state::State;
 use std::{cell::RefCell, rc::Rc, sync::Arc};
 use wasm_bindgen_futures::wasm_bindgen::{prelude::Closure, JsCast};
 
@@ -22,10 +22,7 @@ use wasm_bindgen_futures::wasm_bindgen::{prelude::Closure, JsCast};
 //     mouse_moved_closure.forget()
 // }
 
-pub fn keydown_callback<T: CameraControl + 'static>(
-    window: &Rc<wgpu::web_sys::Window>,
-    state: Rc<RefCell<State<'static, T>>>,
-) {
+pub fn keydown_callback(window: &Rc<wgpu::web_sys::Window>, state: Rc<RefCell<State<'static>>>) {
     let keydown_closure: Closure<dyn FnMut(leptos::web_sys::KeyboardEvent)> =
         Closure::wrap(Box::new({
             move |event: leptos::web_sys::KeyboardEvent| {
@@ -40,9 +37,9 @@ pub fn keydown_callback<T: CameraControl + 'static>(
     keydown_closure.forget()
 }
 
-pub fn resize_callback<T: CameraControl + 'static>(
+pub fn resize_callback(
     window: &Rc<wgpu::web_sys::Window>,
-    state: Rc<RefCell<State<'static, T>>>,
+    state: Rc<RefCell<State<'static>>>,
     canvas: Arc<wgpu::web_sys::HtmlCanvasElement>,
 ) {
     let resize_closure: Closure<dyn FnMut()> = Closure::wrap(Box::new({
